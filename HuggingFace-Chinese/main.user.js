@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，并支持讯飞 API 自动排队长文本翻译。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      1.2.2
+// @version      1.2.3
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
