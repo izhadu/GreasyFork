@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         Hugging Face 中文化插件
+// @name         Hugging Face 中文插件[极速版]
 // @namespace    https://github.com/izhadu/GreasyFork
-// @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，并支持讯飞 API 自动排队长文本翻译。
+// @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，纯本地静态词库，极致流畅不卡顿。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      1.2.3
+// @version      1.3.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -18,8 +18,6 @@
 // @grant        GM_notification
 // @grant        GM_getValue
 // @grant        GM_setValue
-// @grant        GM_xmlhttpRequest
-// @connect      www.iflyrec.com
 // @supportURL   https://github.com/izhadu/GreasyFork/issues
 // ==/UserScript==
 
@@ -78,7 +76,7 @@
         "Files": "文件", "Sessions": "会话", "Hardware": "硬件", "Storage": "存储",
         "Variables": "变量", "Logs": "日志",
 
-        // 空间设置页补充
+        // === 空间设置页深度补充 ===
         "Space Hardware": "空间硬件",
         "Choose a hardware for your Space.": "为您的空间选择硬件。",
         "You'll be billed on a per minute basis.": "您将按分钟计费。",
@@ -88,16 +86,100 @@
         "of inactivity": "无活动",
         "Upgrade to a paid Hardware to set a custom sleep time.": "升级到付费硬件以设置自定义休眠时间。",
         "Pause Space": "暂停空间",
-        "Building something cool as a side project?": "正在将其作为业余项目构建一些很酷的东西？",
+        "Building something cool as a side project?": "正在构建很酷的业余项目？",
         "Apply for a community GPU grant.": "申请社区 GPU 资助。",
         "Restart this Space": "重启此空间",
         "Click this button to trigger a restart of your Space.": "点击此按钮以触发空间的重启。",
         "Restart space": "重启空间",
         "Factory rebuild": "恢复出厂构建",
+        "Click this button to trigger a factory rebuild of your Space. This will invalidate Docker layer caches and rebuild your space from scratch, reinstalling all dependencies.": "点击此按钮将触发空间的恢复出厂构建。这将使 Docker 层缓存失效，并从头开始重建您的空间，重新安装所有依赖项。",
         "CPU basic": "基础 CPU",
         "CPU upgrade": "升级 CPU",
         "Current": "当前",
         "Free": "免费",
+        "Don't sleep": "永不休眠",
+        "5 minutes": "5 分钟", "15 minutes": "15 分钟", "30 minutes": "30 分钟",
+        "1 hour": "1 小时", "10 hours": "10 小时", "24 hours": "24 小时",
+        "48 hours": "48 小时", "72 hours": "72 小时", "1 week": "1 周",
+        
+        "Dev mode": "开发者模式",
+        "Enable dev mode": "启用开发者模式",
+        "Dev mode allows you to remotely access your Space using SSH or VS Code.": "开发者模式允许您使用 SSH 或 VS Code 远程访问您的空间。",
+        "Upgrade to PRO": "升级到 PRO版",
+        " to enable Dev Mode.": " 以启用开发者模式。",
+        
+        "Change Space visibility": "更改空间可见性",
+        "This Space is currently ": "此空间当前为 ",
+        "public": "公开",
+        "protected": "受保护",
+        "private": "私有",
+        "Public": "公开",
+        "Protected": "受保护",
+        "Private": "私有",
+        "(PRO required)": "(需要 PRO版)",
+        ". Anyone on the internet can see this Space. Only you can commit.": "。互联网上的任何人都可以访问此空间。只有您可以提交代码。",
+        
+        "Storage Buckets": "存储桶 (Buckets)",
+        "Mount HF Buckets into your Space for persistent storage. Buckets are shared storage volumes that persist across restarts.": "将 HF Buckets 挂载到您的空间以实现持久化存储。Buckets 是跨重启持久存在的共享存储卷。",
+        "Mount a bucket": "挂载存储桶",
+        "Storage Usage": "存储使用情况",
+        "Large File Storage Used": "大文件存储已用",
+        "Storage limit": "存储限制",
+        "Storage overview": "存储概览",
+        "List Large Files": "列出大文件",
+        
+        "Variables and secrets": "变量与密钥",
+        "No variables": "无变量",
+        "Replace": "替换",
+        "New variable": "新建变量",
+        "New secret": "新建密钥",
+        
+        "Custom domain": "自定义域名",
+        "Define a custom domain to host your Space. The custom domain must be a valid DNS name.": "定义自定义域名来托管您的空间。自定义域名必须是有效的 DNS 名称。",
+        " to enable Custom Domain.": " 以启用自定义域名。",
+        
+        "Rename or transfer this Space": "重命名或转移此空间",
+        "All links to this Space will automatically redirect to the new location, including git operations. However, to avoid confusion, we recommend updating any existing local clones to point to the new repository URL. To do so, you can use the following command:": "所有指向此空间的链接（包括 Git 操作）将自动重定向到新位置。但是，为了避免混淆，我们建议更新所有现有的本地克隆以指向新的仓库 URL。您可以使用以下命令：",
+        "New owner": "新所有者",
+        "New name": "新名称",
+        "I understand, move this Space": "我已了解，转移此空间",
+        
+        "Community contributions": "社区贡献",
+        "Discussions and Pull Requests": "讨论和拉取请求",
+        " are currently ": " 当前处于 ",
+        "enabled": "已启用",
+        "disabled": "已禁用",
+        "for this Space. Members of the community": " 状态。社区成员 ",
+        "can": "可以",
+        "propose changes to this repository.": " 向此仓库提出更改建议。",
+        "Default sorting in the Community Tab:": "社区页面的默认排序：",
+        "Disable Discussions and PRs": "禁用讨论和拉取请求",
+        
+        "Webhooks": "网络钩子 (Webhooks)",
+        " defined in ": " 个定义于 ",
+        "user settings": "用户设置",
+        
+        "Analytics": "数据统计",
+        "All time visits": "总访问量",
+        "Last month visits": "上个月访问量",
+        "Last week visits": "上周访问量",
+        "Duplicates": "复制/克隆次数",
+        
+        "Xet storage": "Xet 存储",
+        "Xet is HF Hub's new storage technology, offering up to 10x greater performance compared to Git LFS. Xet is currently": "Xet 是 HF Hub 的全新存储技术，与 Git LFS 相比性能提升高达 10 倍。Xet 当前处于 ",
+        
+        "Delete this Space": "删除此空间",
+        "This action": "此操作 ",
+        "cannot": "不可",
+        "be undone. This will permanently delete the": " 撤销。这将永久删除 ",
+        "Space repository and all its files": " 空间仓库及其所有文件",
+        "Please type": "请输入 ",
+        "to confirm.": " 进行确认。",
+        "I understand, delete this Space": "我已了解，删除此空间",
+        
+        "Want to edit your Spaces's metadata? Head to the": "想要编辑空间的元数据吗？请前往 ",
+        "README.md and metadata UI": "README.md 和元数据界面",
+        "instead.": "。",
 
         // 文档、主页与列表页
         "On this page": "本页内容", "Table of contents": "目录", "Getting Started": "入门指南",
@@ -170,15 +252,12 @@
 
     // ================= 2. 性能优化核心配置 =================
     
-    // 忽略的代码编辑区域与非文本标签，保障滚动流畅不卡顿
     const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT', 'TEXTAREA', 'SVG', 'PATH', 'IFRAME', 'CANVAS']);
     const SKIP_CLASSES = ['cm-editor', 'monaco-editor', 'ace_editor'];
 
-    // O(1) 复杂度极速查重缓存
     const translatedNodes = new WeakSet();
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
-    // 跨浏览器兼容的后台空闲调度器
     const requestIdle = window.requestIdleCallback || function(cb) {
         return setTimeout(() => cb({ timeRemaining: () => 50 }), 1);
     };
@@ -186,11 +265,14 @@
     // ================= 3. 本地静态与正则翻译引擎 =================
     function translate(text) {
         if (!text) return null;
-        const trimmed = text.trim().replace(/\s+/g, ' ');
+        const trimmed = text.trim().replace(/\s+/g, ' '); 
         if (!trimmed || !/[a-zA-Z]/.test(trimmed)) return null;
 
+        // 精确匹配与碎片匹配
         if (translations[trimmed]) return text.replace(trimmed, translations[trimmed]);
+        if (translations[text]) return translations[text];
 
+        // 正则匹配
         if (enableRegExp && (/\d/.test(trimmed) || /ago|updated|about|closed|now/i.test(trimmed))) {
             for (let i = 0; i < regexRules.length; i++) {
                 const [pattern, replacement] = regexRules[i];
@@ -215,10 +297,15 @@
     }
 
     function translateAttributes(rootNode) {
-        const elements = rootNode.querySelectorAll ? rootNode.querySelectorAll('[title], [placeholder], [aria-label], [value], [data-confirm]') : [];
+        const elements = rootNode.querySelectorAll ? rootNode.querySelectorAll('optgroup, option, [title], [placeholder], [aria-label], [value], [data-confirm]') : [];
         for (let i = 0; i < elements.length; i++) {
             const el = elements[i];
             if (isUnsafeNode(el)) continue;
+
+            if (el.tagName === 'OPTION') {
+                const textNodeRes = translate(el.textContent);
+                if (textNodeRes) el.textContent = textNodeRes;
+            }
 
             const processAttr = (attr) => {
                 const val = el.getAttribute(attr);
@@ -293,109 +380,11 @@
         }
     }
 
-    // ================= 5. 外部 API 自动翻译 (带智能安全排队) =================
-    
-    function fetchTranslationAPI(text, callback) {
-        GM_xmlhttpRequest({
-            method: "POST",
-            url: "https://www.iflyrec.com/TranslationService/v1/textTranslation",
-            headers: {
-                'Content-Type': 'application/json',
-                'Origin': 'https://www.iflyrec.com',
-            },
-            data: JSON.stringify({
-                "from": "2", // 英文
-                "to": "1",   // 中文
-                "contents": [{ "text": text, "frontBlankLine": 0 }]
-            }),
-            responseType: "json",
-            onload: (res) => {
-                try {
-                    const { status, response } = res;
-                    const translatedText = (status === 200 && response && response.biz) ? response.biz[0].translateResult : "翻译失败";
-                    callback(translatedText);
-                } catch (error) {
-                    callback("翻译失败");
-                }
-            },
-            onerror: () => callback("网络请求失败")
-        });
-    }
-
-    const apiQueue = [];
-    let isRequestingAPI = false;
-
-    function processApiQueue() {
-        if (isRequestingAPI || apiQueue.length === 0) return;
-        
-        isRequestingAPI = true;
-        const task = apiQueue.shift();
-
-        fetchTranslationAPI(task.text, (translatedText) => {
-            task.callback(translatedText);
-            // 延迟 300 毫秒后处理下一个，保护 API 不被封禁
-            setTimeout(() => {
-                isRequestingAPI = false;
-                processApiQueue();
-            }, 300); 
-        });
-    }
-
-    function autoTranslateLongText(selector) {
-        const elements = document.querySelectorAll(selector);
-        
-        for (let i = 0; i < elements.length; i++) {
-            let element = elements[i];
-            const desc = element.textContent.trim();
-
-            if (!desc || desc.length < 15 || element.dataset.hfAutoTranslated) {
-                continue;
-            }
-
-            // 标记防重复
-            element.dataset.hfAutoTranslated = "1";
-
-            // 生成排队占位符
-            const loadingId = 'loading-' + Math.random().toString(36).substr(2, 9);
-            const loadingHTML = `<div id="${loadingId}" style='color: #ff9d00; font-size: 12px; margin-top: 5px; font-weight: 500;'>⏳ 自动请求翻译中...</div>`;
-            element.insertAdjacentHTML('afterend', loadingHTML);
-
-            // 推入队列
-            apiQueue.push({
-                text: desc,
-                callback: (text) => {
-                    const loadingEl = document.getElementById(loadingId);
-                    if (loadingEl) loadingEl.remove();
-
-                    if (text && text !== "翻译失败" && text !== "网络请求失败") {
-                        const translationHTML = `
-                            <div style='background-color: rgba(255, 157, 0, 0.05); border-left: 3px solid #ff9d00; padding: 10px; margin-top: 8px; margin-bottom: 12px; border-radius: 4px;'>
-                                <span style='font-size: 14px; line-height: 1.6; color: #333;'>${text.replace(/\n/g, '<br>')}</span>
-                            </div>`;
-                        element.insertAdjacentHTML('afterend', translationHTML);
-                    }
-                }
-            });
-            
-            processApiQueue();
-        }
-    }
-
-    // ================= 6. 核心启动器 =================
-    // 获取需要自动翻译长文本的目标（兼容主站、Gradio 和 Streamlit 空间）
-    const LONG_TEXT_SELECTORS = 'header p, .prose > p, .markdown p, .gradio-container p, .stMarkdown p, [data-testid="stMarkdownContainer"] p';
-
+    // ================= 5. 核心启动器 =================
     function init() {
-        // 初始静态短文本翻译
         translateAttributes(document.body);
         translateTextNodes(document.body);
 
-        // 页面加载后触发 API 长文本翻译
-        setTimeout(() => {
-            autoTranslateLongText(LONG_TEXT_SELECTORS); 
-        }, 1000);
-
-        // 监听 DOM 变化：用于捕捉滚动或点击新加载的短文本
         const observer = new MutationObserver(mutations => {
             for (let i = 0; i < mutations.length; i++) {
                 const mutation = mutations[i];
@@ -421,12 +410,6 @@
 
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // 定时轮询器：专门用于捕获由框架动态刷新的长文本段落
-        setInterval(() => {
-            autoTranslateLongText(LONG_TEXT_SELECTORS);
-        }, 2000);
-
-        // 扩展菜单命令
         GM_registerMenuCommand(`${enableRegExp ? '🔴 关闭' : '🟢 开启'}正则翻译`, () => {
             GM_setValue('enable_RegExp', !enableRegExp);
             GM_notification(`已${!enableRegExp ? '开启' : '关闭'}正则翻译，刷新页面生效`);
@@ -434,7 +417,6 @@
         });
     }
 
-    // 执行挂载
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
