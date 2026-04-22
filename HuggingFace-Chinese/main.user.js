@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         HuggingFace 中文插件
+// @name         Hugging Face 中文化插件
 // @namespace    https://github.com/izhadu/GreasyFork
-// @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，极致流畅不卡顿。
+// @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，并支持讯飞 API 自动排队长文本翻译。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      1.0.0
+// @version      1.2.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -16,6 +16,8 @@
 // @grant        GM_notification
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
+// @connect      www.iflyrec.com
 // @supportURL   https://github.com/izhadu/GreasyFork/issues
 // ==/UserScript==
 
@@ -153,30 +155,24 @@
 
     // ================= 性能优化核心配置 =================
     
-    // 黑名单标签：绝对不进入这些节点内进行翻译，极大提升页面滑动帧率
     const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT', 'TEXTAREA', 'SVG', 'PATH', 'IFRAME', 'CANVAS']);
-    const SKIP_CLASSES = ['cm-editor', 'monaco-editor', 'ace_editor']; // 跳过各种代码编辑器
+    const SKIP_CLASSES = ['cm-editor', 'monaco-editor', 'ace_editor'];
 
-    // 缓存池：O(1) 复杂度极速查重
     const translatedNodes = new WeakSet();
-    
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
-    // ================= 跨浏览器 Idle Callback 兼容 =================
     const requestIdle = window.requestIdleCallback || function(cb) {
-        return setTimeout(() => cb({ timeRemaining: () => 50 }), 1); //Safari 降级方案
+        return setTimeout(() => cb({ timeRemaining: () => 50 }), 1);
     };
 
-    // ================= 翻译核心引擎 =================
+    // ================= 本地静态与正则翻译 =================
     function translate(text) {
         if (!text) return null;
         const trimmed = text.trim().replace(/\s+/g, ' ');
         if (!trimmed || !/[a-zA-Z]/.test(trimmed)) return null;
 
-        // 静态匹配优先 (最快)
         if (translations[trimmed]) return text.replace(trimmed, translations[trimmed]);
 
-        // 正则性能预检：仅当包含数字或特定后缀时才进入正则匹配，节省海量 CPU
         if (enableRegExp && (/\d/.test(trimmed) || /ago|updated|about|closed|now/i.test(trimmed))) {
             for (let i = 0; i < regexRules.length; i++) {
                 const [pattern, replacement] = regexRules[i];
@@ -189,10 +185,9 @@
     }
 
     // ================= DOM 处理层 =================
-    
     function isUnsafeNode(node) {
         if (SKIP_TAGS.has(node.tagName)) return true;
-        if (node.isContentEditable) return true; // 绝对不翻译输入框里的文本
+        if (node.isContentEditable) return true;
         if (node.className && typeof node.className === 'string') {
             for (let i=0; i<SKIP_CLASSES.length; i++) {
                 if (node.className.includes(SKIP_CLASSES[i])) return true;
@@ -249,12 +244,10 @@
         }
     }
 
-    // ================= 异步防抖处理 (灵魂核心) =================
     const pendingNodes = new Set();
     let isProcessing = false;
 
     function processQueue(deadline) {
-        // 当 CPU 空闲时间大于 2ms 时才工作，否则让出版权给浏览器
         while (pendingNodes.size > 0 && deadline.timeRemaining() > 2) {
             const node = pendingNodes.values().next().value;
             pendingNodes.delete(node);
@@ -266,7 +259,7 @@
         }
 
         if (pendingNodes.size > 0) {
-            requestIdle(processQueue); // 还没干完，等下一波空闲接着干
+            requestIdle(processQueue);
         } else {
             isProcessing = false;
         }
@@ -282,11 +275,113 @@
         }
     }
 
+    // ================= 外部 API 自动翻译核心逻辑 (带智能排队) =================
+    
+    // 1. 发起网络请求 (底层函数)
+    function fetchTranslationAPI(text, callback) {
+        GM_xmlhttpRequest({
+            method: "POST",
+            url: "https://www.iflyrec.com/TranslationService/v1/textTranslation",
+            headers: {
+                'Content-Type': 'application/json',
+                'Origin': 'https://www.iflyrec.com',
+            },
+            data: JSON.stringify({
+                "from": "2", // 英文
+                "to": "1",   // 中文
+                "contents": [{ "text": text, "frontBlankLine": 0 }]
+            }),
+            responseType: "json",
+            onload: (res) => {
+                try {
+                    const { status, response } = res;
+                    const translatedText = (status === 200 && response && response.biz) ? response.biz[0].translateResult : "翻译失败";
+                    callback(translatedText);
+                } catch (error) {
+                    callback("翻译失败");
+                }
+            },
+            onerror: () => callback("网络请求失败")
+        });
+    }
+
+    // 2. 智能请求队列：防止瞬间并发请求导致 API 封禁
+    const apiQueue = [];
+    let isRequestingAPI = false;
+
+    function processApiQueue() {
+        if (isRequestingAPI || apiQueue.length === 0) return;
+        
+        isRequestingAPI = true;
+        const task = apiQueue.shift(); // 取出队列中的第一个任务
+
+        fetchTranslationAPI(task.text, (translatedText) => {
+            task.callback(translatedText);
+            // 延迟 300 毫秒后，再处理下一个请求，保护 API
+            setTimeout(() => {
+                isRequestingAPI = false;
+                processApiQueue();
+            }, 300); 
+        });
+    }
+
+    // 3. 自动扫描并注入翻译
+    function autoTranslateLongText(selector) {
+        const elements = document.querySelectorAll(selector);
+        
+        for (let i = 0; i < elements.length; i++) {
+            let element = elements[i];
+            const desc = element.textContent.trim();
+
+            // 如果文本太短、为空，或者已经处理过（通过 dataset 标记），则跳过
+            if (!desc || desc.length < 15 || element.dataset.hfAutoTranslated) {
+                continue;
+            }
+
+            // 立即打上标记，防止 MutationObserver 重复抓取导致死循环
+            element.dataset.hfAutoTranslated = "1";
+
+            // 在原文下方先生成一个“正在翻译”的占位符
+            const loadingId = 'loading-' + Math.random().toString(36).substr(2, 9);
+            const loadingHTML = `<div id="${loadingId}" style='color: #ff9d00; font-size: 12px; margin-top: 5px; font-weight: 500;'>⏳ 自动请求翻译中...</div>`;
+            element.insertAdjacentHTML('afterend', loadingHTML);
+
+            // 将这段文本推入排队系统
+            apiQueue.push({
+                text: desc,
+                callback: (text) => {
+                    // 翻译回来后，删掉“正在翻译”的占位符
+                    const loadingEl = document.getElementById(loadingId);
+                    if (loadingEl) loadingEl.remove();
+
+                    // 如果翻译成功，渲染漂亮的中文卡片
+                    if (text && text !== "翻译失败" && text !== "网络请求失败") {
+                        const translationHTML = `
+                            <div style='background-color: rgba(255, 157, 0, 0.05); border-left: 3px solid #ff9d00; padding: 10px; margin-top: 8px; margin-bottom: 12px; border-radius: 4px;'>
+                                <span style='font-size: 14px; line-height: 1.6; color: #333;'>${text.replace(/\n/g, '<br>')}</span>
+                            </div>`;
+                        element.insertAdjacentHTML('afterend', translationHTML);
+                    }
+                }
+            });
+            
+            // 触发队列运转
+            processApiQueue();
+        }
+    }
+
     // ================= 启动器 =================
     function init() {
+        // 初始静态翻译
         translateAttributes(document.body);
         translateTextNodes(document.body);
 
+        // 页面加载后延迟触发外部 API 自动翻译
+        setTimeout(() => {
+            autoTranslateLongText('header p, .prose > p'); 
+        }, 1000);
+
+        // 监听 DOM 变化
         const observer = new MutationObserver(mutations => {
             for (let i = 0; i < mutations.length; i++) {
                 const mutation = mutations[i];
@@ -312,6 +407,12 @@
 
         observer.observe(document.body, { childList: true, subtree: true });
 
+        // 动态监听新加载的长文本段落
+        setInterval(() => {
+            autoTranslateLongText('header p, .prose > p');
+        }, 2000);
+
+        // 注册菜单功能
         GM_registerMenuCommand(`${enableRegExp ? '🔴 关闭' : '🟢 开启'}正则翻译`, () => {
             GM_setValue('enable_RegExp', !enableRegExp);
             GM_notification(`已${!enableRegExp ? '开启' : '关闭'}正则翻译，刷新页面生效`);
