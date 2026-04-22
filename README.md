@@ -8,7 +8,7 @@
 
 | 脚本名称 | 源码目录 | 功能简介 | GreasyFork 主页 |
 | :--- | :--- | :--- | :--- |
-| **Hugging Face 中文插件** | [`/HuggingFace-Chinese`](./HuggingFace-Chinese) | 采用底层 TreeWalker 与 requestIdleCallback 优化，极致流畅不卡顿的 Hugging Face 界面汉化插件。 | [👉 点击安装](https://greasyfork.org/zh-CN/scripts/537528) |
+| **Hugging Face 中文插件** | [`/HuggingFace-Chinese`](./HuggingFace-Chinese) | 采用底层 TreeWalker 与 requestIdleCallback 优化，极致流畅不卡顿的 Hugging Face 界面汉化插件。 | [👉 点击安装](https://greasyfork.org/zh-CN/scripts/574934) |
 
 *(持续更新中...)*
 
