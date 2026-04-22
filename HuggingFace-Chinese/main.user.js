@@ -4,12 +4,14 @@
 // @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，并支持讯飞 API 自动排队长文本翻译。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      1.2.0
+// @version      1.2.2
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
 // @match        https://*.huggingface.co/*
 // @match        https://hf-mirror.com/*
+// @match        https://*.hf.space/*
+// @match        https://hf.space/*
 // @run-at       document-start
 // @grant        GM_registerMenuCommand
 // @grant        GM_unregisterMenuCommand
@@ -24,7 +26,7 @@
 (function () {
     'use strict';
 
-    // ================= 词库配置 =================
+    // ================= 1. 静态词库配置 =================
     const translations = {
         // 导航栏
         "Models": "模型", "Datasets": "数据集", "Spaces": "空间", "Docs": "文档",
@@ -66,23 +68,40 @@
         "Follow": "关注", "Unfollow": "取消关注", "View": "查看", "Hide": "隐藏",
         "Show more": "显示更多", "Show less": "显示较少", "Expand": "展开", "Collapse": "收起",
 
-        // 模型相关
+        // 模型与空间相关
         "Model card": "模型卡片", "Files and versions": "文件与版本", "Community": "社区",
         "Training metrics": "训练指标", "Training logs": "训练日志", "Deploy": "部署",
         "Use in Transformers": "在Transformers中使用", "Hosted inference API": "托管推理API",
         "Contributors": "贡献者", "Licenses": "许可证", "Likes": "点赞数", "Downloads": "下载量",
         "Tasks": "任务类型", "Languages": "语言类型", "Main": "主要", "Libraries": "模型库",
-
-        // 空间相关
         "Duplicate this Space": "复制此空间", "Embed this Space": "嵌入此空间", "App": "应用",
         "Files": "文件", "Sessions": "会话", "Hardware": "硬件", "Storage": "存储",
         "Variables": "变量", "Logs": "日志",
 
-        // 文档相关
+        // 空间设置页补充
+        "Space Hardware": "空间硬件",
+        "Choose a hardware for your Space.": "为您的空间选择硬件。",
+        "You'll be billed on a per minute basis.": "您将按分钟计费。",
+        "View usage in your billing settings.": "在计费设置中查看使用情况。",
+        "Sleep time settings": "休眠时间设置",
+        "Sleep after": "在此时间后休眠",
+        "of inactivity": "无活动",
+        "Upgrade to a paid Hardware to set a custom sleep time.": "升级到付费硬件以设置自定义休眠时间。",
+        "Pause Space": "暂停空间",
+        "Building something cool as a side project?": "正在将其作为业余项目构建一些很酷的东西？",
+        "Apply for a community GPU grant.": "申请社区 GPU 资助。",
+        "Restart this Space": "重启此空间",
+        "Click this button to trigger a restart of your Space.": "点击此按钮以触发空间的重启。",
+        "Restart space": "重启空间",
+        "Factory rebuild": "恢复出厂构建",
+        "CPU basic": "基础 CPU",
+        "CPU upgrade": "升级 CPU",
+        "Current": "当前",
+        "Free": "免费",
+
+        // 文档、主页与列表页
         "On this page": "本页内容", "Table of contents": "目录", "Getting Started": "入门指南",
         "Tutorials": "教程", "Conceptual Guides": "概念指南", "How-to Guides": "操作指南", "API Documentation": "API文档",
-
-        // 新增内容
         "Collections": "收藏集", "Organizations": "组织", "Posts": "帖子", "Daily Papers": "每日论文",
         "Learn": "学习", "Discord": "Discord社区", "Forum": "论坛", "Github": "GitHub",
         "Enterprise Hub": "企业中心", "Expert Support": "专家支持", "Inference Endpoints": "推理端点",
@@ -104,14 +123,10 @@
         "No model card": "无模型卡片", "New: Create and edit this model card directly on the website!": "新功能：直接在线创建并编辑模型卡片！",
         "Contribute a Model Card": "贡献模型卡片", "Adapters": "适配器", "Finetunes": "微调模型",
         "Merges": "合并模型", "Quantizations": "量化模型",
-
-        // 主页特定
         "Models, datasets and Spaces": "模型、数据集与空间", "Discover, explore and share ML resources": "发现、探索并分享机器学习资源",
         "Top contributors": "顶级贡献者", "Featured Spaces": "精选空间", "All Spaces": "所有空间",
         "Explore": "探索", "Browse models": "浏览模型", "Browse datasets": "浏览数据集", "Browse Spaces": "浏览空间",
         "Light theme": "浅色主题", "Light": "浅色", "Dark": "深色", "System": "系统", "System theme": "系统主题",
-
-        // 列表页通用
         "Sort:": "排序:", "Most likes": "最多点赞", "Most downloads": "最多下载", "Recently updated": "最近更新",
         "Task": "任务", "Library": "库", "Dataset": "数据集", "Architecture": "架构",
         "Model name or keyword": "模型名称或关键词", "Search models": "搜索模型", "Parameters": "参数量",
@@ -153,19 +168,22 @@
         [/\b(\d+) (models?|datasets?|spaces?)\b/i, '$1个$2']
     ];
 
-    // ================= 性能优化核心配置 =================
+    // ================= 2. 性能优化核心配置 =================
     
+    // 忽略的代码编辑区域与非文本标签，保障滚动流畅不卡顿
     const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT', 'TEXTAREA', 'SVG', 'PATH', 'IFRAME', 'CANVAS']);
     const SKIP_CLASSES = ['cm-editor', 'monaco-editor', 'ace_editor'];
 
+    // O(1) 复杂度极速查重缓存
     const translatedNodes = new WeakSet();
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
+    // 跨浏览器兼容的后台空闲调度器
     const requestIdle = window.requestIdleCallback || function(cb) {
         return setTimeout(() => cb({ timeRemaining: () => 50 }), 1);
     };
 
-    // ================= 本地静态与正则翻译 =================
+    // ================= 3. 本地静态与正则翻译引擎 =================
     function translate(text) {
         if (!text) return null;
         const trimmed = text.trim().replace(/\s+/g, ' ');
@@ -184,7 +202,7 @@
         return null;
     }
 
-    // ================= DOM 处理层 =================
+    // ================= 4. DOM 处理与观察者层 =================
     function isUnsafeNode(node) {
         if (SKIP_TAGS.has(node.tagName)) return true;
         if (node.isContentEditable) return true;
@@ -275,9 +293,8 @@
         }
     }
 
-    // ================= 外部 API 自动翻译核心逻辑 (带智能排队) =================
+    // ================= 5. 外部 API 自动翻译 (带智能安全排队) =================
     
-    // 1. 发起网络请求 (底层函数)
     function fetchTranslationAPI(text, callback) {
         GM_xmlhttpRequest({
             method: "POST",
@@ -305,7 +322,6 @@
         });
     }
 
-    // 2. 智能请求队列：防止瞬间并发请求导致 API 封禁
     const apiQueue = [];
     let isRequestingAPI = false;
 
@@ -313,11 +329,11 @@
         if (isRequestingAPI || apiQueue.length === 0) return;
         
         isRequestingAPI = true;
-        const task = apiQueue.shift(); // 取出队列中的第一个任务
+        const task = apiQueue.shift();
 
         fetchTranslationAPI(task.text, (translatedText) => {
             task.callback(translatedText);
-            // 延迟 300 毫秒后，再处理下一个请求，保护 API
+            // 延迟 300 毫秒后处理下一个，保护 API 不被封禁
             setTimeout(() => {
                 isRequestingAPI = false;
                 processApiQueue();
@@ -325,7 +341,6 @@
         });
     }
 
-    // 3. 自动扫描并注入翻译
     function autoTranslateLongText(selector) {
         const elements = document.querySelectorAll(selector);
         
@@ -333,28 +348,25 @@
             let element = elements[i];
             const desc = element.textContent.trim();
 
-            // 如果文本太短、为空，或者已经处理过（通过 dataset 标记），则跳过
             if (!desc || desc.length < 15 || element.dataset.hfAutoTranslated) {
                 continue;
             }
 
-            // 立即打上标记，防止 MutationObserver 重复抓取导致死循环
+            // 标记防重复
             element.dataset.hfAutoTranslated = "1";
 
-            // 在原文下方先生成一个“正在翻译”的占位符
+            // 生成排队占位符
             const loadingId = 'loading-' + Math.random().toString(36).substr(2, 9);
             const loadingHTML = `<div id="${loadingId}" style='color: #ff9d00; font-size: 12px; margin-top: 5px; font-weight: 500;'>⏳ 自动请求翻译中...</div>`;
             element.insertAdjacentHTML('afterend', loadingHTML);
 
-            // 将这段文本推入排队系统
+            // 推入队列
             apiQueue.push({
                 text: desc,
                 callback: (text) => {
-                    // 翻译回来后，删掉“正在翻译”的占位符
                     const loadingEl = document.getElementById(loadingId);
                     if (loadingEl) loadingEl.remove();
 
-                    // 如果翻译成功，渲染漂亮的中文卡片
                     if (text && text !== "翻译失败" && text !== "网络请求失败") {
                         const translationHTML = `
                             <div style='background-color: rgba(255, 157, 0, 0.05); border-left: 3px solid #ff9d00; padding: 10px; margin-top: 8px; margin-bottom: 12px; border-radius: 4px;'>
@@ -365,23 +377,25 @@
                 }
             });
             
-            // 触发队列运转
             processApiQueue();
         }
     }
 
-    // ================= 启动器 =================
+    // ================= 6. 核心启动器 =================
+    // 获取需要自动翻译长文本的目标（兼容主站、Gradio 和 Streamlit 空间）
+    const LONG_TEXT_SELECTORS = 'header p, .prose > p, .markdown p, .gradio-container p, .stMarkdown p, [data-testid="stMarkdownContainer"] p';
+
     function init() {
-        // 初始静态翻译
+        // 初始静态短文本翻译
         translateAttributes(document.body);
         translateTextNodes(document.body);
 
-        // 页面加载后延迟触发外部 API 自动翻译
+        // 页面加载后触发 API 长文本翻译
         setTimeout(() => {
-            autoTranslateLongText('header p, .prose > p'); 
+            autoTranslateLongText(LONG_TEXT_SELECTORS); 
         }, 1000);
 
-        // 监听 DOM 变化
+        // 监听 DOM 变化：用于捕捉滚动或点击新加载的短文本
         const observer = new MutationObserver(mutations => {
             for (let i = 0; i < mutations.length; i++) {
                 const mutation = mutations[i];
@@ -407,12 +421,12 @@
 
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // 动态监听新加载的长文本段落
+        // 定时轮询器：专门用于捕获由框架动态刷新的长文本段落
         setInterval(() => {
-            autoTranslateLongText('header p, .prose > p');
+            autoTranslateLongText(LONG_TEXT_SELECTORS);
         }, 2000);
 
-        // 注册菜单功能
+        // 扩展菜单命令
         GM_registerMenuCommand(`${enableRegExp ? '🔴 关闭' : '🟢 开启'}正则翻译`, () => {
             GM_setValue('enable_RegExp', !enableRegExp);
             GM_notification(`已${!enableRegExp ? '开启' : '关闭'}正则翻译，刷新页面生效`);
@@ -420,6 +434,7 @@
         });
     }
 
+    // 执行挂载
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
