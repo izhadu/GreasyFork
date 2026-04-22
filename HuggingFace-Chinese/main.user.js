@@ -164,7 +164,7 @@
 
     // ================= 跨浏览器 Idle Callback 兼容 =================
     const requestIdle = window.requestIdleCallback || function(cb) {
-        return setTimeout(() => cb({ timeRemaining: () => 50 }), 1); // Safari 降级方案
+        return setTimeout(() => cb({ timeRemaining: () => 50 }), 1); //Safari 降级方案
     };
 
     // ================= 翻译核心引擎 =================
