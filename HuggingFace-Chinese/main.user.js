@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，纯本地静态词库，极致流畅不卡顿。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      1.3.0
+// @version      1.3.1
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
