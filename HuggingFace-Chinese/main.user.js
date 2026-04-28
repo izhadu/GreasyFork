@@ -234,7 +234,10 @@
         "Model Hub": "模型中心", "Dataset Hub": "数据集中心", "Space Hub": "应用中心", "Inference API": "推理API",
         "Widgets": "小部件", "Training": "训练", "Education": "教育版", "Research": "研究", "Partners": "合作伙伴",
         "Events": "活动", "Careers": "招聘", "Security": "安全", "Status": "状态", "Open source": "开源",
-        "Activity": "活动", "Commits": "提交记录"
+        "Activity": "活动", "Commits": "提交记录",
+
+        // 2026.04.28
+        "Repositories": "仓库", "Buckets": "存储桶",'Repository':'代码库','Type':'类型','Jobs':'职位','Upgrade to':'升级到','PRO':'专业版','ENTERPRISE':'企业版','Teams':'团队','Create repository':'新建代码库','Add repository':'添加代码库','Billing':'账单','Inference Endpoints':'推理终结点','Space':'空间', 'Datasets':'数据集','Models':'模型', 'Visibility':'可见性','of Total':'总计百分比', 'HuggingChat':'对话','Running':'运行中','Buildpack':'构建包','Use environment':'使用环境','Using':'使用','Show more':'显示更多','Loading more...':'加载更多...','Error':'错误','Unknown':'未知', 'View':'查看','View files':'查看文件','View repo':'查看仓库','View repo on GitHub':'查看GitHub仓库', 'Add a README.md':'添加README.md', 'Create a model card':'创建模型卡', 'Settings':'设置', 'Usage insights':'使用洞察', 'Quickstart':'快速开始', 'like':'点赞','Downloads':'下载','Restart Space':'重新启动空间', 'Enable Dev Mode':'启用开发模式','Run locally':'本地运行','Clone repository':'克隆代码库','Add to collection':'添加到收藏','Report this Space':'报告此空间','Mute notifications':'静音通知',
     };
 
     const regexRules = [
