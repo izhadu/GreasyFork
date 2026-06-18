@@ -1,6 +1,16 @@
+// ==UserScript==
+// @name         Hugging Face 中文静态词库
+// @namespace    https://github.com/izhadu/GreasyFork
+// @version      2.0.0
+// @description  Hugging Face 中文插件底层词库，作为 GreasyFork 外部依赖库使用。
+// @author       izhadu
+// @exclude      *
+// ==/UserScript==
+
 /**
- * @file Hugging Face 中文静态词库 (CDN 分发版)
- * @description 采用 Map 结构保障 O(1) 检索时间复杂度。
+ * @type {Map<string, string>}
+ * @description 核心静态词库。
+ * @why 采用 Map 数据结构进行寻址，确保词汇量激增时维持 O(1) 的检索时间复杂度，阻断原生对象遍历引起的性能劣化。
  */
 
 window.HF_ZH_DICT = new Map([
