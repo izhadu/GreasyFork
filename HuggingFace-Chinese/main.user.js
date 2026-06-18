@@ -12,7 +12,7 @@
 // @match        https://hf-mirror.com/*
 // @match        https://*.hf.space/*
 // @match        https://hf.space/*
-// @require      https://cdn.jsdelivr.net/gh/izhadu/GreasyFork@main/HuggingFace-Chinese/dict.js
+// @require      https://update.greasyfork.org/scripts/574934/dict.js
 // @run-at       document-start
 // @grant        GM_registerMenuCommand
 // @grant        GM_unregisterMenuCommand
