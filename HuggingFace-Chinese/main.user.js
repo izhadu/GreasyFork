@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         HuggingFace 中文插件[极速版]
+// @name         HuggingFace 汉化
 // @namespace    https://github.com/izhadu/GreasyFork
 // @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，词库彻底解耦。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      3.0.0
+// @version      3.1.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*

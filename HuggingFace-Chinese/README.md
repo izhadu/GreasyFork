@@ -1,4 +1,4 @@
-# Hugging Face 中文化插件 (Hugging Face Chinese Translation)
+# HuggingFace 汉化
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![GreasyFork](https://img.shields.io/badge/GreasyFork-v1.1.2-red)](https://greasyfork.org/zh-CN/scripts/537528)
