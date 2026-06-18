@@ -3,7 +3,7 @@
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型", "Datasets": "数据集", "Spaces": "空间", "Docs": "文档", "Solutions": "解决方案", "Pricing": "定价",
-    "Login": "登录", "Sign Up": "注册", "Search": "搜索", "Blog": "博客", "Enterprise": "企业版", "Log in": "登录",
+    "Login": "登录", "Sign Up": "注册", "Search": "搜索", "Blog": "博客", "Enterprise": "企业版", "Log In": "登录",
     "Profile": "个人资料", "Settings": "设置", "Logout": "退出登录", "Notifications": "通知", "Help": "帮助",
 
     "@comment_ai": "================ 侧边栏和 AI 任务 ================",
