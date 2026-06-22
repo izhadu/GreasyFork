@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，词库彻底解耦。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      3.1.0
+// @version      3.2.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -25,13 +25,11 @@
 (function () {
     'use strict';
 
-    /**
-     * @why 指向 GitHub Raw 原始文件层，规避第三方 CDN 的审核与长周期缓存。
-     */
     const DICT_URL = "https://raw.githubusercontent.com/izhadu/GreasyFork/main/HuggingFace-Chinese/dict.json";
     const CACHE_KEY = "hf_zh_dict_data";
     
     let dict = new Map();
+    let lowerDict = new Map(); // 修复2：新增忽略大小写的内存映射表
     let regexRules = [];
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
@@ -43,11 +41,15 @@
         return setTimeout(() => cb({ timeRemaining: () => 50 }), 1);
     };
 
-    /**
-     * @why 构建运行时翻译环境。将 JSON 格式的字符串规则映射为内存中的 Map 实例与 RegExp 对象。
-     */
     function initTranslator(configData) {
         dict = new Map(Object.entries(configData.translations));
+        lowerDict = new Map();
+        
+        // 构建全小写索引
+        for (let [key, value] of dict.entries()) {
+            lowerDict.set(key.toLowerCase(), value);
+        }
+        
         regexRules = configData.regexRules.map(rule => [new RegExp(rule[0], rule[2] || ""), rule[1]]);
         
         translateAttributes(document.body);
@@ -59,9 +61,15 @@
         const trimmed = text.trim().replace(/\s+/g, ' '); 
         if (!trimmed || !/[a-zA-Z]/.test(trimmed)) return null;
 
+        // 优先精确匹配
         if (dict.has(trimmed)) return text.replace(trimmed, dict.get(trimmed));
         if (dict.has(text)) return dict.get(text);
 
+        // 兜底忽略大小写匹配 (解决 "Log in" 无法匹配 "Log In" 的问题)
+        const lowerTrimmed = trimmed.toLowerCase();
+        if (lowerDict.has(lowerTrimmed)) return text.replace(trimmed, lowerDict.get(lowerTrimmed));
+
+        // 正则动态处理
         if (enableRegExp && (/\d/.test(trimmed) || /ago|updated|about|closed|now/i.test(trimmed))) {
             for (let i = 0; i < regexRules.length; i++) {
                 const [pattern, replacement] = regexRules[i];
@@ -142,12 +150,12 @@
 
         let textNode;
         while ((textNode = walker.nextNode())) {
-            if (translatedNodes.has(textNode)) continue;
+            // 修复3：移除 !translatedNodes.has 的严格拦截限制，允许复用节点的二次翻译
             const translatedText = translate(textNode.nodeValue);
             if (translatedText) {
                 textNode.nodeValue = translatedText;
+                translatedNodes.add(textNode);
             }
-            translatedNodes.add(textNode);
         }
     }
 
@@ -185,19 +193,37 @@
     const observer = new MutationObserver(mutations => {
         for (let i = 0; i < mutations.length; i++) {
             const mutation = mutations[i];
+            
             if (mutation.type === 'childList') {
                 for (let j = 0; j < mutation.addedNodes.length; j++) {
                     const node = mutation.addedNodes[j];
                     if (node.nodeType === Node.ELEMENT_NODE) {
                         queueTranslation(node);
                     } else if (node.nodeType === Node.TEXT_NODE) {
-                        if (!translatedNodes.has(node) && node.nodeValue.trim()) {
+                        if (node.nodeValue.trim()) {
                             const parent = node.parentNode;
                             if (parent && !isUnsafeNode(parent)) {
                                 const res = translate(node.nodeValue);
-                                if (res) node.nodeValue = res;
-                                translatedNodes.add(node);
+                                if (res) {
+                                    node.nodeValue = res;
+                                    translatedNodes.add(node);
+                                }
                             }
+                        }
+                    }
+                }
+            } else if (mutation.type === 'characterData') {
+                // 修复1：针对 React 直接更改现有 TextNode 的行为进行捕获 (例如导航栏的 Log In 渲染)
+                const node = mutation.target;
+                if (node.nodeValue.trim()) {
+                    const parent = node.parentNode;
+                    if (parent && !isUnsafeNode(parent)) {
+                        const res = translate(node.nodeValue);
+                        if (res) {
+                            // 此处重新赋值会再次触发 characterData 事件
+                            // 但由于 translate('登录') 会返回 null，因此不会形成死循环
+                            node.nodeValue = res;
+                            translatedNodes.add(node);
                         }
                     }
                 }
@@ -205,19 +231,15 @@
         }
     });
 
-    /**
-     * @why 核心下发控制层。优先保证首屏渲染速度（利用本地缓存引擎直启），网络请求于后台隐式进行版本校对。
-     */
     function launch() {
         const localData = GM_getValue(CACHE_KEY, null);
         
-        // 1. 本地缓存直接启动引擎，无网络延迟阻塞
         if (localData && localData.translations) {
             initTranslator(localData);
-            observer.observe(document.body, { childList: true, subtree: true });
+            // 修复1：开启 characterData 监听
+            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
         }
 
-        // 2. 后台异步拉取 GitHub Raw 配置进行版本比对
         GM_xmlhttpRequest({
             method: "GET",
             url: DICT_URL + "?t=" + Date.now(),
@@ -225,16 +247,14 @@
                 if (res.status === 200) {
                     try {
                         const remoteData = JSON.parse(res.responseText);
-                        
-                        // 若本地无数据或远端版本号更新，则覆盖写入
                         if (!localData || remoteData.version !== localData.version) {
                             GM_setValue(CACHE_KEY, remoteData);
                             console.info(`[HF中文插件] 词库已在后台静默更新至版本: ${remoteData.version}`);
                             
-                            // 初次安装场景：写入后即刻拉起引擎
                             if (!localData) {
                                 initTranslator(remoteData);
-                                observer.observe(document.body, { childList: true, subtree: true });
+                                // 修复1：开启 characterData 监听
+                                observer.observe(document.body, { childList: true, subtree: true, characterData: true });
                             }
                         }
                     } catch (e) {
