@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，词库彻底解耦。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      3.2.1
+// @version      3.3.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -29,14 +29,15 @@
     const CACHE_KEY = "hf_zh_dict_data";
     
     let dict = new Map();
-    let lowerDict = new Map(); // 修复2：新增忽略大小写的内存映射表
+    let lowerDict = new Map();
     let regexRules = [];
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
     const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT', 'TEXTAREA', 'SVG', 'PATH', 'IFRAME', 'CANVAS']);
-    const SKIP_CLASSES = ['cm-editor', 'monaco-editor', 'ace_editor'];
-    const translatedNodes = new WeakSet();
+    // 使用正则替代数组遍历，在极高频调用的 isUnsafeNode 中提升性能
+    const UNSAFE_CLASSES_REGEX = /(cm-editor|monaco-editor|ace_editor)/;
 
+    // Polyfill RequestIdleCallback
     const requestIdle = window.requestIdleCallback || function(cb) {
         return setTimeout(() => cb({ timeRemaining: () => 50 }), 1);
     };
@@ -56,25 +57,39 @@
         translateTextNodes(document.body);
     }
 
+    /**
+     * 核心翻译逻辑
+     * [Why] 修复原版 text.replace(trimmed) 潜在的因内部多个空格折叠导致无法替换的 Bug。
+     * 改为提取外围前后缀或精准 replace(originalTrimmed)。
+     */
     function translate(text) {
         if (!text) return null;
-        const trimmed = text.trim().replace(/\s+/g, ' '); 
-        if (!trimmed || !/[a-zA-Z]/.test(trimmed)) return null;
+        
+        const originalTrimmed = text.trim();
+        if (!originalTrimmed || !/[a-zA-Z]/.test(originalTrimmed)) return null;
+
+        // 折叠内部空格仅用于查字典，不能用于文本 replace
+        const lookupKey = originalTrimmed.replace(/\s+/g, ' ');
 
         // 优先精确匹配
-        if (dict.has(trimmed)) return text.replace(trimmed, dict.get(trimmed));
-        if (dict.has(text)) return dict.get(text);
+        let result = dict.get(lookupKey) || dict.get(originalTrimmed);
+        
+        // 兜底忽略大小写匹配
+        if (!result) {
+            result = lowerDict.get(lookupKey.toLowerCase());
+        }
 
-        // 兜底忽略大小写匹配 (解决 "Log in" 无法匹配 "Log In" 的问题)
-        const lowerTrimmed = trimmed.toLowerCase();
-        if (lowerDict.has(lowerTrimmed)) return text.replace(trimmed, lowerDict.get(lowerTrimmed));
+        // 若查到结果，将原包含多空格的 originalTrimmed 部分替换，保留开头/结尾空格
+        if (result) {
+            return text.replace(originalTrimmed, result);
+        }
 
-        // 正则动态处理
-        if (enableRegExp && (/\d/.test(trimmed) || /ago|updated|about|closed|now/i.test(trimmed))) {
+        // 正则动态处理 (合并正则条件提升命中效率)
+        if (enableRegExp && /[\d]|ago|updated|about|closed|now/i.test(lookupKey)) {
             for (let i = 0; i < regexRules.length; i++) {
                 const [pattern, replacement] = regexRules[i];
-                if (pattern.test(trimmed)) {
-                    return text.replace(trimmed, trimmed.replace(pattern, replacement));
+                if (pattern.test(originalTrimmed)) {
+                    return text.replace(originalTrimmed, originalTrimmed.replace(pattern, replacement));
                 }
             }
         }
@@ -82,12 +97,13 @@
     }
 
     function isUnsafeNode(node) {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
         if (SKIP_TAGS.has(node.tagName)) return true;
         if (node.isContentEditable) return true;
-        if (node.className && typeof node.className === 'string') {
-            for (let i = 0; i < SKIP_CLASSES.length; i++) {
-                if (node.className.includes(SKIP_CLASSES[i])) return true;
-            }
+        
+        const className = node.className;
+        if (typeof className === 'string' && className !== '') {
+            return UNSAFE_CLASSES_REGEX.test(className);
         }
         return false;
     }
@@ -104,7 +120,7 @@
 
             if (el.tagName === 'OPTION') {
                 const textNodeRes = translate(el.textContent);
-                if (textNodeRes) {
+                if (textNodeRes && textNodeRes !== el.textContent) {
                     el.textContent = textNodeRes;
                     isModified = true;
                 }
@@ -114,7 +130,7 @@
                 const val = el.getAttribute(attr);
                 if (val) {
                     const res = translate(val);
-                    if (res) {
+                    if (res && res !== val) {
                         el.setAttribute(attr, res);
                         isModified = true;
                     }
@@ -150,11 +166,10 @@
 
         let textNode;
         while ((textNode = walker.nextNode())) {
-            // 修复3：移除 !translatedNodes.has 的严格拦截限制，允许复用节点的二次翻译
             const translatedText = translate(textNode.nodeValue);
-            if (translatedText) {
+            // 确保变更发生才重新赋值，避免触发无意义的 DOM 重绘
+            if (translatedText && translatedText !== textNode.nodeValue) {
                 textNode.nodeValue = translatedText;
-                translatedNodes.add(textNode);
             }
         }
     }
@@ -204,26 +219,22 @@
                             const parent = node.parentNode;
                             if (parent && !isUnsafeNode(parent)) {
                                 const res = translate(node.nodeValue);
-                                if (res) {
+                                if (res && res !== node.nodeValue) {
                                     node.nodeValue = res;
-                                    translatedNodes.add(node);
                                 }
                             }
                         }
                     }
                 }
             } else if (mutation.type === 'characterData') {
-                // 修复1：针对 React 直接更改现有 TextNode 的行为进行捕获 (例如导航栏的 Log In 渲染)
                 const node = mutation.target;
                 if (node.nodeValue.trim()) {
                     const parent = node.parentNode;
                     if (parent && !isUnsafeNode(parent)) {
                         const res = translate(node.nodeValue);
-                        if (res) {
-                            // 此处重新赋值会再次触发 characterData 事件
-                            // 但由于 translate('登录') 会返回 null，因此不会形成死循环
+                        // [Why] 增加严格对比。React 等框架重绘文本节点时，防止翻译回填造成的二次死循环解析。
+                        if (res && res !== node.nodeValue) {
                             node.nodeValue = res;
-                            translatedNodes.add(node);
                         }
                     }
                 }
@@ -236,7 +247,6 @@
         
         if (localData && localData.translations) {
             initTranslator(localData);
-            // 修复1：开启 characterData 监听
             observer.observe(document.body, { childList: true, subtree: true, characterData: true });
         }
 
@@ -253,7 +263,6 @@
                             
                             if (!localData) {
                                 initTranslator(remoteData);
-                                // 修复1：开启 characterData 监听
                                 observer.observe(document.body, { childList: true, subtree: true, characterData: true });
                             }
                         }
