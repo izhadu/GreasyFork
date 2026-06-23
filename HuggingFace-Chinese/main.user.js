@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，词库彻底解耦。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      3.2.0
+// @version      3.2.1
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -25,7 +25,7 @@
 (function () {
     'use strict';
 
-    const DICT_URL = "https://raw.githubusercontent.com/izhadu/GreasyFork/main/HuggingFace-Chinese/dict.json";
+    const DICT_URL = "https://git.zhadu.com/github.com/izhadu/GreasyFork/blob/main/HuggingFace-Chinese/dict.json";
     const CACHE_KEY = "hf_zh_dict_data";
     
     let dict = new Map();
