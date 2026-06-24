@@ -1,5 +1,5 @@
 {
-  "version": "2026.06.24 14:05:00",
+  "version": "2026.06.24 15:00:00",
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型",
@@ -173,7 +173,6 @@
     "Upvotes": "赞成票",
     "Articles": "文章",
     "Refresh List": "刷新列表",
-    "Inbox": "收件箱",
     "Build": "构建",
     "Container": "容器",
     "Logs Endpoint": "日志端点",
@@ -338,6 +337,7 @@
     "New Dataset": "新建数据集",
     "New Space": "新建空间",
     "New Collection": "新建收藏集",
+    "New Bucket": "新建存储桶",
     "Create organization": "创建组织",
     "Usage Quota": "资源使用配额",
     "Private Storage": "私有存储",
