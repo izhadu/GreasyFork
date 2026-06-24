@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         HuggingFace 汉化
+// @name         HuggingFace 汉化 (性能优化版)
 // @namespace    https://github.com/izhadu/GreasyFork
-// @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 剪枝与同步 MutationObserver 架构，彻底解决性能拖慢问题。
+// @description  中文化 Hugging Face 界面菜单及内容。采用时间切片与合并遍历架构，彻底解决浏览器卡顿、拖慢问题。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      4.0.0
+// @version      4.1.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -34,7 +34,6 @@
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
     const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT', 'TEXTAREA', 'SVG', 'PATH', 'IFRAME', 'CANVAS']);
-    const UNSAFE_CLASSES_REGEX = /(cm-editor|monaco-editor|ace_editor)/;
 
     function initTranslator(configData) {
         dict = new Map(Object.entries(configData.translations));
@@ -45,20 +44,12 @@
         }
         
         regexRules = configData.regexRules.map(rule => [new RegExp(rule[0], rule[2] || ""), rule[1]]);
-        
         performDOMTranslation(document.body);
     }
 
-    /**
-     * Translates a given text string based on exact, lowercase, or regex matches.
-     * @param {string} text - The original string from the DOM.
-     * @returns {string|null} - The translated string or null if no translation exists.
-     */
     function translate(text) {
         if (!text) return null;
-        
         const originalTrimmed = text.trim();
-        // Fast fail for strings without alphabetical characters
         if (!originalTrimmed || !/[a-zA-Z]/.test(originalTrimmed)) return null;
 
         const lookupKey = originalTrimmed.replace(/\s+/g, ' ');
@@ -79,36 +70,32 @@
         return null;
     }
 
-    /**
-     * Determines if a DOM element should be excluded from translation.
-     * @param {Node} node - The element node to evaluate.
-     * @returns {boolean} - True if the node is unsafe for text mutation.
-     */
     function isUnsafeNode(node) {
         if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
-        if (SKIP_TAGS.has(node.tagName)) return true;
-        if (node.isContentEditable) return true;
+        if (SKIP_TAGS.has(node.tagName) || node.isContentEditable) return true;
         
-        const className = node.getAttribute('class');
-        if (className && UNSAFE_CLASSES_REGEX.test(className)) return true;
-        
+        // 性能优化：用原生 classList 替代正则匹配
+        const cl = node.classList;
+        if (cl && (cl.contains('cm-editor') || cl.contains('monaco-editor') || cl.contains('ace_editor'))) {
+            return true;
+        }
         return false;
     }
 
-    function translateAttributes(rootNode) {
-        const processElement = (el) => {
-            if (isUnsafeNode(el)) return;
-            let isModified = false;
+    function processElementAttributes(el) {
+        if (el.dataset.hfTranslated) return;
+        let isModified = false;
 
-            if (el.tagName === 'OPTION') {
-                const res = translate(el.textContent);
-                if (res && res !== el.textContent) {
-                    el.textContent = res;
-                    isModified = true;
-                }
+        if (el.tagName === 'OPTION') {
+            const res = translate(el.textContent);
+            if (res && res !== el.textContent) {
+                el.textContent = res;
+                isModified = true;
             }
+        }
 
-            const processAttr = (attr) => {
+        const processAttr = (attr) => {
+            if (el.hasAttribute(attr)) {
                 const val = el.getAttribute(attr);
                 if (val && /[a-zA-Z]/.test(val)) {
                     const res = translate(val);
@@ -117,38 +104,27 @@
                         isModified = true;
                     }
                 }
-            };
-
-            if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
-                processAttr('value');
-            } else if (el.tagName === 'INPUT') {
-                processAttr('placeholder');
             }
-            processAttr('title');
-            processAttr('aria-label');
-            processAttr('data-confirm');
-
-            if (isModified) el.setAttribute('data-hf-translated', 'true');
         };
 
-        if (rootNode.nodeType === Node.ELEMENT_NODE && rootNode.matches && rootNode.matches('optgroup, option, [title], [placeholder], [aria-label], [value], [data-confirm]')) {
-            processElement(rootNode);
+        if (el.tagName === 'INPUT') {
+            if (el.type === 'button' || el.type === 'submit') processAttr('value');
+            else processAttr('placeholder');
         }
+        processAttr('title');
+        processAttr('aria-label');
+        processAttr('data-confirm');
 
-        if (!rootNode.querySelectorAll) return;
-        const elements = rootNode.querySelectorAll('optgroup:not([data-hf-translated]), option:not([data-hf-translated]), [title]:not([data-hf-translated]), [placeholder]:not([data-hf-translated]), [aria-label]:not([data-hf-translated]), [value]:not([data-hf-translated]), [data-confirm]:not([data-hf-translated])');
-        for (let i = 0; i < elements.length; i++) {
-            processElement(elements[i]);
-        }
+        if (isModified) el.dataset.hfTranslated = 'true';
     }
 
-    /**
-     * [Why] Uses NodeFilter.FILTER_REJECT on elements instead of skipping text nodes.
-     * By rejecting an entire element branch (e.g. <script> or .cm-editor), the TreeWalker
-     * safely ignores thousands of deeply nested code nodes instantaneously, massively boosting performance.
-     */
-    function translateTextNodes(rootNode) {
+    // 性能优化：将文本和属性的遍历合二为一
+    function performDOMTranslation(rootNode) {
         if (isUnsafeNode(rootNode)) return;
+
+        if (rootNode.nodeType === Node.ELEMENT_NODE) {
+            processElementAttributes(rootNode);
+        }
 
         const walker = document.createTreeWalker(
             rootNode,
@@ -156,9 +132,8 @@
             {
                 acceptNode: function(node) {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        return isUnsafeNode(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+                        return isUnsafeNode(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
                     }
-                    
                     const val = node.nodeValue;
                     if (!val || val.length > 500 || !val.trim() || !/[a-zA-Z]/.test(val)) {
                         return NodeFilter.FILTER_REJECT;
@@ -170,29 +145,55 @@
 
         let node;
         while ((node = walker.nextNode())) {
-            const res = translate(node.nodeValue);
-            if (res && res !== node.nodeValue) {
-                node.nodeValue = res;
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                processElementAttributes(node);
+            } else if (node.nodeType === Node.TEXT_NODE) {
+                const res = translate(node.nodeValue);
+                if (res && res !== node.nodeValue) {
+                    node.nodeValue = res;
+                }
             }
         }
     }
 
-    /**
-     * Executes translation pipeline over a target DOM branch.
-     */
-    function performDOMTranslation(node) {
-        translateAttributes(node);
-        translateTextNodes(node);
+    // 性能优化：时间切片任务队列，防止阻塞主线程
+    let mutationQueue = new Set();
+    let isProcessing = false;
+
+    function processQueue() {
+        if (mutationQueue.size === 0) {
+            isProcessing = false;
+            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+            return;
+        }
+
+        observer.disconnect(); // 处理时暂停监听，防止死循环
+
+        const startTime = performance.now();
+        const iterator = mutationQueue.values();
+        let result = iterator.next();
+
+        // 限制每帧处理时间不超过 15ms
+        while (!result.done && (performance.now() - startTime < 15)) {
+            const node = result.value;
+            mutationQueue.delete(node);
+            
+            if (document.body.contains(node)) {
+                performDOMTranslation(node);
+            }
+            result = iterator.next();
+        }
+
+        if (mutationQueue.size > 0) {
+            requestAnimationFrame(processQueue);
+        } else {
+            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+            isProcessing = false;
+        }
     }
 
     const observer = new MutationObserver(mutations => {
-        /*
-         * [Why] CRITICAL PERFORMANCE FIX: Disconnect observer during execution.
-         * Preventing the script from capturing its own DOM updates absolutely eradicates 
-         * mutation looping, which was the core reason for Firefox locking up the main thread.
-         */
-        observer.disconnect();
-
+        let hasNewNodes = false;
         for (let i = 0; i < mutations.length; i++) {
             const mutation = mutations[i];
             
@@ -200,33 +201,23 @@
                 for (let j = 0; j < mutation.addedNodes.length; j++) {
                     const node = mutation.addedNodes[j];
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        performDOMTranslation(node);
-                    } else if (node.nodeType === Node.TEXT_NODE) {
-                        const val = node.nodeValue;
-                        if (val && /[a-zA-Z]/.test(val)) {
-                            const parent = node.parentNode;
-                            if (parent && !isUnsafeNode(parent)) {
-                                const res = translate(val);
-                                if (res && res !== val) node.nodeValue = res;
-                            }
-                        }
+                        mutationQueue.add(node);
+                        hasNewNodes = true;
+                    } else if (node.nodeType === Node.TEXT_NODE && node.parentNode) {
+                        mutationQueue.add(node.parentNode);
+                        hasNewNodes = true;
                     }
                 }
-            } else if (mutation.type === 'characterData') {
-                const node = mutation.target;
-                const val = node.nodeValue;
-                if (val && /[a-zA-Z]/.test(val)) {
-                    const parent = node.parentNode;
-                    if (parent && !isUnsafeNode(parent)) {
-                        const res = translate(val);
-                        if (res && res !== val) node.nodeValue = res;
-                    }
-                }
+            } else if (mutation.type === 'characterData' && mutation.target.parentNode) {
+                mutationQueue.add(mutation.target.parentNode);
+                hasNewNodes = true;
             }
         }
 
-        // Resume observation after batch completion
-        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+        if (hasNewNodes && !isProcessing) {
+            isProcessing = true;
+            requestAnimationFrame(processQueue);
+        }
     });
 
     function launch() {
