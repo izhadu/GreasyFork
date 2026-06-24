@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         HuggingFace 汉化
 // @namespace    https://github.com/izhadu/GreasyFork
-// @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 与 requestIdleCallback 优化，词库彻底解耦。
+// @description  中文化 Hugging Face 界面菜单及内容，采用底层 TreeWalker 剪枝与同步 MutationObserver 架构，彻底解决性能拖慢问题。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      3.3.0
+// @version      4.0.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -34,57 +34,40 @@
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
     const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT', 'TEXTAREA', 'SVG', 'PATH', 'IFRAME', 'CANVAS']);
-    // 使用正则替代数组遍历，在极高频调用的 isUnsafeNode 中提升性能
     const UNSAFE_CLASSES_REGEX = /(cm-editor|monaco-editor|ace_editor)/;
-
-    // Polyfill RequestIdleCallback
-    const requestIdle = window.requestIdleCallback || function(cb) {
-        return setTimeout(() => cb({ timeRemaining: () => 50 }), 1);
-    };
 
     function initTranslator(configData) {
         dict = new Map(Object.entries(configData.translations));
         lowerDict = new Map();
         
-        // 构建全小写索引
         for (let [key, value] of dict.entries()) {
             lowerDict.set(key.toLowerCase(), value);
         }
         
         regexRules = configData.regexRules.map(rule => [new RegExp(rule[0], rule[2] || ""), rule[1]]);
         
-        translateAttributes(document.body);
-        translateTextNodes(document.body);
+        performDOMTranslation(document.body);
     }
 
     /**
-     * 核心翻译逻辑
-     * [Why] 修复原版 text.replace(trimmed) 潜在的因内部多个空格折叠导致无法替换的 Bug。
-     * 改为提取外围前后缀或精准 replace(originalTrimmed)。
+     * Translates a given text string based on exact, lowercase, or regex matches.
+     * @param {string} text - The original string from the DOM.
+     * @returns {string|null} - The translated string or null if no translation exists.
      */
     function translate(text) {
         if (!text) return null;
         
         const originalTrimmed = text.trim();
+        // Fast fail for strings without alphabetical characters
         if (!originalTrimmed || !/[a-zA-Z]/.test(originalTrimmed)) return null;
 
-        // 折叠内部空格仅用于查字典，不能用于文本 replace
         const lookupKey = originalTrimmed.replace(/\s+/g, ' ');
 
-        // 优先精确匹配
         let result = dict.get(lookupKey) || dict.get(originalTrimmed);
-        
-        // 兜底忽略大小写匹配
-        if (!result) {
-            result = lowerDict.get(lookupKey.toLowerCase());
-        }
+        if (!result) result = lowerDict.get(lookupKey.toLowerCase());
 
-        // 若查到结果，将原包含多空格的 originalTrimmed 部分替换，保留开头/结尾空格
-        if (result) {
-            return text.replace(originalTrimmed, result);
-        }
+        if (result) return text.replace(originalTrimmed, result);
 
-        // 正则动态处理 (合并正则条件提升命中效率)
         if (enableRegExp && /[\d]|ago|updated|about|closed|now/i.test(lookupKey)) {
             for (let i = 0; i < regexRules.length; i++) {
                 const [pattern, replacement] = regexRules[i];
@@ -96,39 +79,38 @@
         return null;
     }
 
+    /**
+     * Determines if a DOM element should be excluded from translation.
+     * @param {Node} node - The element node to evaluate.
+     * @returns {boolean} - True if the node is unsafe for text mutation.
+     */
     function isUnsafeNode(node) {
         if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
         if (SKIP_TAGS.has(node.tagName)) return true;
         if (node.isContentEditable) return true;
         
-        const className = node.className;
-        if (typeof className === 'string' && className !== '') {
-            return UNSAFE_CLASSES_REGEX.test(className);
-        }
+        const className = node.getAttribute('class');
+        if (className && UNSAFE_CLASSES_REGEX.test(className)) return true;
+        
         return false;
     }
 
     function translateAttributes(rootNode) {
-        if (!rootNode.querySelectorAll) return;
-        const elements = rootNode.querySelectorAll('optgroup:not([data-hf-translated]), option:not([data-hf-translated]), [title]:not([data-hf-translated]), [placeholder]:not([data-hf-translated]), [aria-label]:not([data-hf-translated]), [value]:not([data-hf-translated]), [data-confirm]:not([data-hf-translated])');
-        
-        for (let i = 0; i < elements.length; i++) {
-            const el = elements[i];
-            if (isUnsafeNode(el)) continue;
-
+        const processElement = (el) => {
+            if (isUnsafeNode(el)) return;
             let isModified = false;
 
             if (el.tagName === 'OPTION') {
-                const textNodeRes = translate(el.textContent);
-                if (textNodeRes && textNodeRes !== el.textContent) {
-                    el.textContent = textNodeRes;
+                const res = translate(el.textContent);
+                if (res && res !== el.textContent) {
+                    el.textContent = res;
                     isModified = true;
                 }
             }
 
             const processAttr = (attr) => {
                 const val = el.getAttribute(attr);
-                if (val) {
+                if (val && /[a-zA-Z]/.test(val)) {
                     const res = translate(val);
                     if (res && res !== val) {
                         el.setAttribute(attr, res);
@@ -147,65 +129,70 @@
             processAttr('data-confirm');
 
             if (isModified) el.setAttribute('data-hf-translated', 'true');
+        };
+
+        if (rootNode.nodeType === Node.ELEMENT_NODE && rootNode.matches && rootNode.matches('optgroup, option, [title], [placeholder], [aria-label], [value], [data-confirm]')) {
+            processElement(rootNode);
+        }
+
+        if (!rootNode.querySelectorAll) return;
+        const elements = rootNode.querySelectorAll('optgroup:not([data-hf-translated]), option:not([data-hf-translated]), [title]:not([data-hf-translated]), [placeholder]:not([data-hf-translated]), [aria-label]:not([data-hf-translated]), [value]:not([data-hf-translated]), [data-confirm]:not([data-hf-translated])');
+        for (let i = 0; i < elements.length; i++) {
+            processElement(elements[i]);
         }
     }
 
+    /**
+     * [Why] Uses NodeFilter.FILTER_REJECT on elements instead of skipping text nodes.
+     * By rejecting an entire element branch (e.g. <script> or .cm-editor), the TreeWalker
+     * safely ignores thousands of deeply nested code nodes instantaneously, massively boosting performance.
+     */
     function translateTextNodes(rootNode) {
+        if (isUnsafeNode(rootNode)) return;
+
         const walker = document.createTreeWalker(
             rootNode,
-            NodeFilter.SHOW_TEXT,
+            NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
             {
                 acceptNode: function(node) {
-                    const parent = node.parentNode;
-                    if (!parent || isUnsafeNode(parent)) return NodeFilter.FILTER_REJECT;
-                    if (node.nodeValue.length > 500 || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        return isUnsafeNode(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+                    }
+                    
+                    const val = node.nodeValue;
+                    if (!val || val.length > 500 || !val.trim() || !/[a-zA-Z]/.test(val)) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
                     return NodeFilter.FILTER_ACCEPT;
                 }
             }
         );
 
-        let textNode;
-        while ((textNode = walker.nextNode())) {
-            const translatedText = translate(textNode.nodeValue);
-            // 确保变更发生才重新赋值，避免触发无意义的 DOM 重绘
-            if (translatedText && translatedText !== textNode.nodeValue) {
-                textNode.nodeValue = translatedText;
+        let node;
+        while ((node = walker.nextNode())) {
+            const res = translate(node.nodeValue);
+            if (res && res !== node.nodeValue) {
+                node.nodeValue = res;
             }
         }
     }
 
-    const pendingNodes = new Set();
-    let isProcessing = false;
-
-    function processQueue(deadline) {
-        while (pendingNodes.size > 0 && deadline.timeRemaining() > 2) {
-            const node = pendingNodes.values().next().value;
-            pendingNodes.delete(node);
-            
-            if (node.isConnected) {
-                translateAttributes(node);
-                translateTextNodes(node);
-            }
-        }
-
-        if (pendingNodes.size > 0) {
-            requestIdle(processQueue);
-        } else {
-            isProcessing = false;
-        }
-    }
-
-    function queueTranslation(node) {
-        if (node.nodeType === Node.ELEMENT_NODE && isUnsafeNode(node)) return;
-        pendingNodes.add(node);
-
-        if (!isProcessing) {
-            isProcessing = true;
-            requestIdle(processQueue);
-        }
+    /**
+     * Executes translation pipeline over a target DOM branch.
+     */
+    function performDOMTranslation(node) {
+        translateAttributes(node);
+        translateTextNodes(node);
     }
 
     const observer = new MutationObserver(mutations => {
+        /*
+         * [Why] CRITICAL PERFORMANCE FIX: Disconnect observer during execution.
+         * Preventing the script from capturing its own DOM updates absolutely eradicates 
+         * mutation looping, which was the core reason for Firefox locking up the main thread.
+         */
+        observer.disconnect();
+
         for (let i = 0; i < mutations.length; i++) {
             const mutation = mutations[i];
             
@@ -213,33 +200,33 @@
                 for (let j = 0; j < mutation.addedNodes.length; j++) {
                     const node = mutation.addedNodes[j];
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        queueTranslation(node);
+                        performDOMTranslation(node);
                     } else if (node.nodeType === Node.TEXT_NODE) {
-                        if (node.nodeValue.trim()) {
+                        const val = node.nodeValue;
+                        if (val && /[a-zA-Z]/.test(val)) {
                             const parent = node.parentNode;
                             if (parent && !isUnsafeNode(parent)) {
-                                const res = translate(node.nodeValue);
-                                if (res && res !== node.nodeValue) {
-                                    node.nodeValue = res;
-                                }
+                                const res = translate(val);
+                                if (res && res !== val) node.nodeValue = res;
                             }
                         }
                     }
                 }
             } else if (mutation.type === 'characterData') {
                 const node = mutation.target;
-                if (node.nodeValue.trim()) {
+                const val = node.nodeValue;
+                if (val && /[a-zA-Z]/.test(val)) {
                     const parent = node.parentNode;
                     if (parent && !isUnsafeNode(parent)) {
-                        const res = translate(node.nodeValue);
-                        // [Why] 增加严格对比。React 等框架重绘文本节点时，防止翻译回填造成的二次死循环解析。
-                        if (res && res !== node.nodeValue) {
-                            node.nodeValue = res;
-                        }
+                        const res = translate(val);
+                        if (res && res !== val) node.nodeValue = res;
                     }
                 }
             }
         }
+
+        // Resume observation after batch completion
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     });
 
     function launch() {
