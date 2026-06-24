@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         HuggingFace 汉化 (性能优化版)
+// @name         HuggingFace 汉化
 // @namespace    https://github.com/izhadu/GreasyFork
-// @description  中文化 Hugging Face 界面菜单及内容。采用时间切片与合并遍历架构，彻底解决浏览器卡顿、拖慢问题。
+// @description  中文化 Hugging Face 界面菜单及内容。采用真正的广度优先异步平铺架构，实现 0 阻塞、绝对丝滑。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      4.1.0
+// @version      5.0.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -34,23 +34,36 @@
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
     const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'NOSCRIPT', 'TEXTAREA', 'SVG', 'PATH', 'IFRAME', 'CANVAS']);
+    const translatedNodes = new WeakSet();
 
-    function initTranslator(configData) {
-        dict = new Map(Object.entries(configData.translations));
-        lowerDict = new Map();
-        
-        for (let [key, value] of dict.entries()) {
-            lowerDict.set(key.toLowerCase(), value);
+    // 队列系统：摒弃高消耗的 Array.shift()，采用指针游标
+    const elementQueue = [];
+    const textQueue = [];
+    let qHeadElem = 0;
+    let qHeadText = 0;
+    let isWorking = false;
+
+    function isUnsafeElement(node) {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
+        if (SKIP_TAGS.has(node.tagName) || node.isContentEditable) return true;
+        const cl = node.classList;
+        if (cl && (cl.contains('cm-editor') || cl.contains('monaco-editor') || cl.contains('ace_editor'))) return true;
+        return false;
+    }
+
+    function checkSafeContext(node) {
+        let curr = (node && node.nodeType === Node.ELEMENT_NODE) ? node : (node ? node.parentNode : null);
+        while (curr && curr !== document.body && curr !== document.documentElement) {
+            if (isUnsafeElement(curr)) return false;
+            curr = curr.parentNode;
         }
-        
-        regexRules = configData.regexRules.map(rule => [new RegExp(rule[0], rule[2] || ""), rule[1]]);
-        performDOMTranslation(document.body);
+        return true;
     }
 
     function translate(text) {
         if (!text) return null;
         const originalTrimmed = text.trim();
-        if (!originalTrimmed || !/[a-zA-Z]/.test(originalTrimmed)) return null;
+        if (!originalTrimmed || originalTrimmed.length > 500 || !/[a-zA-Z]/.test(originalTrimmed)) return null;
 
         const lookupKey = originalTrimmed.replace(/\s+/g, ' ');
 
@@ -70,162 +83,148 @@
         return null;
     }
 
-    function isUnsafeNode(node) {
-        if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
-        if (SKIP_TAGS.has(node.tagName) || node.isContentEditable) return true;
+    function translateTextNode(node) {
+        if (translatedNodes.has(node)) return;
+        const val = node.nodeValue;
         
-        // 性能优化：用原生 classList 替代正则匹配
-        const cl = node.classList;
-        if (cl && (cl.contains('cm-editor') || cl.contains('monaco-editor') || cl.contains('ace_editor'))) {
-            return true;
+        const res = translate(val);
+        if (res && res !== val) {
+            node.nodeValue = res;
+            translatedNodes.add(node); // 内存级防抖，防止 Observer 死循环
         }
-        return false;
     }
 
-    function processElementAttributes(el) {
-        if (el.dataset.hfTranslated) return;
-        let isModified = false;
-
-        if (el.tagName === 'OPTION') {
-            const res = translate(el.textContent);
-            if (res && res !== el.textContent) {
-                el.textContent = res;
-                isModified = true;
-            }
-        }
-
-        const processAttr = (attr) => {
-            if (el.hasAttribute(attr)) {
-                const val = el.getAttribute(attr);
-                if (val && /[a-zA-Z]/.test(val)) {
-                    const res = translate(val);
-                    if (res && res !== val) {
-                        el.setAttribute(attr, res);
-                        isModified = true;
-                    }
+    function translateElementAttributes(el) {
+        const checkAttr = (attr) => {
+            const val = el.getAttribute(attr);
+            if (val) {
+                const res = translate(val);
+                if (res && res !== val) {
+                    el.setAttribute(attr, res);
                 }
             }
         };
 
         if (el.tagName === 'INPUT') {
-            if (el.type === 'button' || el.type === 'submit') processAttr('value');
-            else processAttr('placeholder');
+            if (el.type === 'button' || el.type === 'submit') {
+                if (el.hasAttribute('value')) checkAttr('value');
+            } else {
+                if (el.hasAttribute('placeholder')) checkAttr('placeholder');
+            }
         }
-        processAttr('title');
-        processAttr('aria-label');
-        processAttr('data-confirm');
-
-        if (isModified) el.dataset.hfTranslated = 'true';
+        
+        if (el.hasAttribute('title')) checkAttr('title');
+        if (el.hasAttribute('aria-label')) checkAttr('aria-label');
+        if (el.hasAttribute('data-confirm')) checkAttr('data-confirm');
     }
 
-    // 性能优化：将文本和属性的遍历合二为一
-    function performDOMTranslation(rootNode) {
-        if (isUnsafeNode(rootNode)) return;
+    // 核心重构：广度优先平铺，绝不处理深层嵌套，保证 12ms 内安全切断
+    function workLoop() {
+        const TIME_LIMIT = 12; // 严控在 16.6ms 的刷新帧率安全线内
+        const start = performance.now();
 
-        if (rootNode.nodeType === Node.ELEMENT_NODE) {
-            processElementAttributes(rootNode);
-        }
+        // 1. 元素节点展开与属性翻译
+        while (qHeadElem < elementQueue.length && (performance.now() - start) < TIME_LIMIT) {
+            const el = elementQueue[qHeadElem++];
+            if (isUnsafeElement(el)) continue; 
 
-        const walker = document.createTreeWalker(
-            rootNode,
-            NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-            {
-                acceptNode: function(node) {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        return isUnsafeNode(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
-                    }
-                    const val = node.nodeValue;
-                    if (!val || val.length > 500 || !val.trim() || !/[a-zA-Z]/.test(val)) {
-                        return NodeFilter.FILTER_REJECT;
-                    }
-                    return NodeFilter.FILTER_ACCEPT;
+            translateElementAttributes(el);
+
+            // 只将下一层子节点推入队列，绝不递归
+            let child = el.firstChild;
+            while (child) {
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    elementQueue.push(child);
+                } else if (child.nodeType === Node.TEXT_NODE) {
+                    textQueue.push(child);
                 }
-            }
-        );
-
-        let node;
-        while ((node = walker.nextNode())) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-                processElementAttributes(node);
-            } else if (node.nodeType === Node.TEXT_NODE) {
-                const res = translate(node.nodeValue);
-                if (res && res !== node.nodeValue) {
-                    node.nodeValue = res;
-                }
+                child = child.nextSibling;
             }
         }
-    }
 
-    // 性能优化：时间切片任务队列，防止阻塞主线程
-    let mutationQueue = new Set();
-    let isProcessing = false;
-
-    function processQueue() {
-        if (mutationQueue.size === 0) {
-            isProcessing = false;
-            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-            return;
+        // 2. 文本节点纯粹翻译
+        while (qHeadText < textQueue.length && (performance.now() - start) < TIME_LIMIT) {
+            const textNode = textQueue[qHeadText++];
+            translateTextNode(textNode);
         }
 
-        observer.disconnect(); // 处理时暂停监听，防止死循环
-
-        const startTime = performance.now();
-        const iterator = mutationQueue.values();
-        let result = iterator.next();
-
-        // 限制每帧处理时间不超过 15ms
-        while (!result.done && (performance.now() - startTime < 15)) {
-            const node = result.value;
-            mutationQueue.delete(node);
-            
-            if (document.body.contains(node)) {
-                performDOMTranslation(node);
-            }
-            result = iterator.next();
-        }
-
-        if (mutationQueue.size > 0) {
-            requestAnimationFrame(processQueue);
+        // 3. 内存回收或延续任务
+        if (qHeadElem >= elementQueue.length && qHeadText >= textQueue.length) {
+            elementQueue.length = 0;
+            textQueue.length = 0;
+            qHeadElem = 0;
+            qHeadText = 0;
+            isWorking = false;
         } else {
-            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-            isProcessing = false;
+            requestAnimationFrame(workLoop);
         }
     }
 
     const observer = new MutationObserver(mutations => {
-        let hasNewNodes = false;
+        let added = false;
         for (let i = 0; i < mutations.length; i++) {
-            const mutation = mutations[i];
+            const m = mutations[i];
             
-            if (mutation.type === 'childList') {
-                for (let j = 0; j < mutation.addedNodes.length; j++) {
-                    const node = mutation.addedNodes[j];
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        mutationQueue.add(node);
-                        hasNewNodes = true;
-                    } else if (node.nodeType === Node.TEXT_NODE && node.parentNode) {
-                        mutationQueue.add(node.parentNode);
-                        hasNewNodes = true;
+            if (m.type === 'childList') {
+                for (let j = 0; j < m.addedNodes.length; j++) {
+                    const node = m.addedNodes[j];
+                    if (node.nodeType === Node.ELEMENT_NODE && checkSafeContext(node)) {
+                        elementQueue.push(node);
+                        added = true;
+                    } else if (node.nodeType === Node.TEXT_NODE && checkSafeContext(node)) {
+                        textQueue.push(node);
+                        added = true;
                     }
                 }
-            } else if (mutation.type === 'characterData' && mutation.target.parentNode) {
-                mutationQueue.add(mutation.target.parentNode);
-                hasNewNodes = true;
+            } else if (m.type === 'characterData') {
+                const node = m.target;
+                if (!translatedNodes.has(node) && checkSafeContext(node)) {
+                    textQueue.push(node);
+                    added = true;
+                }
+            } else if (m.type === 'attributes') {
+                const node = m.target;
+                if (checkSafeContext(node)) {
+                    elementQueue.push(node);
+                    added = true;
+                }
             }
         }
 
-        if (hasNewNodes && !isProcessing) {
-            isProcessing = true;
-            requestAnimationFrame(processQueue);
+        if (added && !isWorking) {
+            isWorking = true;
+            requestAnimationFrame(workLoop);
         }
     });
+
+    function initTranslator(configData) {
+        dict = new Map(Object.entries(configData.translations));
+        lowerDict = new Map();
+        for (let [key, value] of dict.entries()) {
+            lowerDict.set(key.toLowerCase(), value);
+        }
+        regexRules = configData.regexRules.map(rule => [new RegExp(rule[0], rule[2] || ""), rule[1]]);
+        
+        // 启动初始页面的打碎与解析
+        elementQueue.push(document.body);
+        isWorking = true;
+        requestAnimationFrame(workLoop);
+        
+        // 开启 C++ 底层过滤监听
+        observer.observe(document.body, { 
+            childList: true, 
+            subtree: true, 
+            characterData: true,
+            attributes: true,
+            attributeFilter: ['placeholder', 'title', 'aria-label', 'value', 'data-confirm']
+        });
+    }
 
     function launch() {
         const localData = GM_getValue(CACHE_KEY, null);
         
         if (localData && localData.translations) {
             initTranslator(localData);
-            observer.observe(document.body, { childList: true, subtree: true, characterData: true });
         }
 
         GM_xmlhttpRequest({
@@ -237,15 +236,11 @@
                         const remoteData = JSON.parse(res.responseText);
                         if (!localData || remoteData.version !== localData.version) {
                             GM_setValue(CACHE_KEY, remoteData);
-                            console.info(`[HF中文插件] 词库已在后台静默更新至版本: ${remoteData.version}`);
-                            
-                            if (!localData) {
-                                initTranslator(remoteData);
-                                observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-                            }
+                            console.info(`[HF中文插件] 词库已更新至: ${remoteData.version}`);
+                            if (!localData) initTranslator(remoteData);
                         }
                     } catch (e) {
-                        console.error("[HF中文插件] 远程词库 JSON 解析异常", e);
+                        console.error("[HF中文插件] 解析异常", e);
                     }
                 }
             }
@@ -253,7 +248,7 @@
 
         GM_registerMenuCommand(`${enableRegExp ? '关闭' : '开启'}正则翻译`, () => {
             GM_setValue('enable_RegExp', !enableRegExp);
-            GM_notification(`已${!enableRegExp ? '开启' : '关闭'}正则翻译，刷新页面生效`);
+            GM_notification(`已${!enableRegExp ? '开启' : '关闭'}正则翻译，刷新生效`);
             location.reload();
         });
     }
