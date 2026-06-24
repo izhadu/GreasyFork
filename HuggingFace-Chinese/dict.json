@@ -1,5 +1,5 @@
 {
-  "version": "2026.06.24 11:23:35",
+  "version": "2026.06.24 11:30:00",
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型",
@@ -29,6 +29,12 @@
     "Enterprise Support": "企业支持",
     "Privacy": "隐私",
     "Sort": "排序",
+    "None yet": "暂无",
+    "Add status": "添加状态",
+    "Edit profile": "编辑资料",
+    "contributors": "贡献者",
+    "History": "历史",
+  
 
     "@comment_ai": "================ 侧边栏和 AI 任务 ================",
     "Filters": "筛选器",
@@ -488,7 +494,8 @@
     "Clone repository": "克隆仓库",
     "Add to collection": "加入收藏集",
     "Report this Space": "举报此空间",
-    "Mute notifications": "免打扰模式"
+    "Mute notifications": "免打扰模式",
+    "Synchronize duplicated Space": "同步重复的空间",
   },
   "regexRules": [
     ["\\bupdated\\b", "更新于", "i"],
