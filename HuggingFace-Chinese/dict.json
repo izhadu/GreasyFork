@@ -1,5 +1,5 @@
 {
-  "version": "2026.06.24 11:30:00",
+  "version": "2026.06.24 14:00:00",
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型",
@@ -173,6 +173,8 @@
     "Upvotes": "赞成票",
     "Articles": "文章",
     "Refresh List": "刷新列表",
+    "Inbox": "收件箱",
+    "Follow your favorite AI creators": "关注您喜爱的AI创作者",
 
     "@comment_space": "================ 空间、设置、模型卡片详情 ================",
     "Model card": "模型卡片",
@@ -495,7 +497,7 @@
     "Add to collection": "加入收藏集",
     "Report this Space": "举报此空间",
     "Mute notifications": "免打扰模式",
-    "Synchronize duplicated Space": "同步重复的空间",
+    "Synchronize duplicated Space": "同步重复的空间"
   },
   "regexRules": [
     ["\\bupdated\\b", "更新于", "i"],
