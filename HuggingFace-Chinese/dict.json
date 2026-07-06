@@ -1,5 +1,5 @@
 {
-  "version": "2026.07.02 10:00:00",
+  "version": "2026.07.06 10:00:00",
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型",
@@ -504,7 +504,16 @@
     "Add to collection": "加入收藏集",
     "Report this Space": "举报此空间",
     "Mute notifications": "免打扰模式",
-    "Synchronize duplicated Space": "同步重复的空间"
+    "Synchronize duplicated Space": "同步重复的空间",
+    "hour": "小时",
+    "per hour": "每小时",
+    "month": "月",
+    "per month": "每月",
+    "Nvidia": "英伟达",
+    "Display price": "显示价格",
+    "View usage in your": "查看用量",
+    "billing settings": "账单设置"
+
   },
   "regexRules": [
     ["\\bupdated\\b", "更新于", "i"],
