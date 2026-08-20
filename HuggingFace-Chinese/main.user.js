@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容。底层重构，彻底解决火狐拖慢网页问题，实现 0 阻塞、绝对丝滑。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      5.2.0
+// @version      5.2.1
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -27,14 +27,14 @@
 
     const DICT_URL = "https://git.zhadu.com/github.com/izhadu/GreasyFork/blob/main/HuggingFace-Chinese/dict.json";
     const CACHE_KEY = "hf_zh_dict_data";
-    
+
     let dict = new Map();
     let lowerDict = new Map();
     let regexRules = [];
     const enableRegExp = GM_getValue("enable_RegExp", true);
-    
+
     // 预编译正则触发器，避免每次都做无意义的正则匹配消耗性能
-    const regexTrigger = /[\d]|ago|updated|about|closed|now/i;
+    const regexTrigger = /[\d]|ago|updated|about|closed|now|restricted|task_categories/i;
 
     // 使用 CSS 选择器定义非安全区，利用 C++ 底层解析极速匹配
     const UNSAFE_SELECTOR = 'script, style, code, pre, noscript, textarea, svg, iframe, canvas, [contenteditable="true"], .cm-editor, .monaco-editor, .ace_editor';
@@ -59,13 +59,15 @@
         const lookupKey = originalTrimmed.replace(/\s+/g, ' ');
 
         let result = dict.get(lookupKey) || dict.get(originalTrimmed) || lowerDict.get(lookupKey.toLowerCase());
-        if (result) return text.replace(originalTrimmed, result);
+        // 用函数式替换，避免译文中的 $&/$'/$$ 等被 replace 二次解释
+        if (result) return text.replace(originalTrimmed, () => result);
 
         if (enableRegExp && regexTrigger.test(lookupKey)) {
             for (let i = 0; i < regexRules.length; i++) {
                 const [pattern, replacement] = regexRules[i];
                 if (pattern.test(originalTrimmed)) {
-                    return text.replace(originalTrimmed, originalTrimmed.replace(pattern, replacement));
+                    const res = originalTrimmed.replace(pattern, replacement);
+                    return text.replace(originalTrimmed, () => res);
                 }
             }
         }
@@ -106,7 +108,7 @@
             root,
             NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
             {
-                acceptNode: function(node) {
+                acceptNode: function (node) {
                     if (node.nodeType === Node.ELEMENT_NODE) {
                         // 如果遇到不该翻译的区块，直接使用 FILTER_REJECT 砍掉整个分支，节约海量性能
                         if (node.matches && node.matches(UNSAFE_SELECTOR)) {
@@ -172,7 +174,7 @@
 
         for (let i = 0; i < mutations.length; i++) {
             const m = mutations[i];
-            
+
             if (m.type === 'childList') {
                 for (let j = 0; j < m.addedNodes.length; j++) {
                     const node = m.addedNodes[j];
@@ -190,7 +192,9 @@
                 }
             } else if (m.type === 'characterData') {
                 const node = m.target;
-                if (!translatedNodes.has(node) && node.parentElement && !node.parentElement.closest(UNSAFE_SELECTOR)) {
+                // 内容已变化（如动态计数），跳过 translatedNodes 检查重新翻译；
+                // 自身写入引发的回环会在 translate 查无命中时自然终止
+                if (node.parentElement && !node.parentElement.closest(UNSAFE_SELECTOR)) {
                     textQueue.push(node);
                     shouldTrigger = true;
                 }
@@ -216,18 +220,18 @@
             lowerDict.set(key.toLowerCase(), value);
         }
         regexRules = configData.regexRules.map(rule => [new RegExp(rule[0], rule[2] || ""), rule[1]]);
-        
+
         // 初始页面打碎与解析
         extractNodes(document.body);
         if (!isWorking && (textQueue.length > 0 || elementQueue.length > 0)) {
             isWorking = true;
             requestAnimationFrame(workLoop);
         }
-        
+
         // 开启监听
-        observer.observe(document.body, { 
-            childList: true, 
-            subtree: true, 
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
             characterData: true,
             attributes: true,
             attributeFilter: ['placeholder', 'title', 'aria-label', 'value', 'data-confirm']
@@ -236,7 +240,7 @@
 
     function launch() {
         const localData = GM_getValue(CACHE_KEY, null);
-        
+
         if (localData && localData.translations) {
             initTranslator(localData);
         }
