@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容。底层重构，彻底解决火狐拖慢网页问题，实现 0 阻塞、绝对丝滑。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      5.2.1
+// @version      5.2.2
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -33,33 +33,28 @@
     let regexRules = [];
     const enableRegExp = GM_getValue("enable_RegExp", true);
 
-    // 预编译正则触发器，避免每次都做无意义的正则匹配消耗性能
     const regexTrigger = /[\d]|ago|updated|about|closed|now|restricted|task_categories/i;
 
-    // 使用 CSS 选择器定义非安全区，利用 C++ 底层解析极速匹配
-    const UNSAFE_SELECTOR = 'script, style, code, pre, noscript, textarea, svg, iframe, canvas, [contenteditable="true"], .cm-editor, .monaco-editor, .ace_editor';
+    // 优化：在非安全区增加 .font-mono, .shiki, .highlight, .blob-wrapper 等，屏蔽文件查看器与代码区
+    const UNSAFE_SELECTOR = 'script, style, code, pre, noscript, textarea, svg, iframe, canvas, [contenteditable="true"], .cm-editor, .monaco-editor, .ace_editor, .font-mono, .shiki, .highlight, .blob-wrapper, .blob-code, [class*="language-"], [data-testid="file-content"], .file-content';
     const ATTR_SELECTOR = '[placeholder], [title], [aria-label], [value], [data-confirm]';
 
     const translatedNodes = new WeakSet();
 
-    // 高性能扁平化任务队列
     const textQueue = [];
     const elementQueue = [];
     let qHeadText = 0;
     let qHeadElem = 0;
     let isWorking = false;
 
-    // 翻译核心逻辑
     function translate(text) {
         if (!text) return null;
         const originalTrimmed = text.trim();
-        // 过滤空字符、超长文本（避免卡死）、纯符号
         if (!originalTrimmed || originalTrimmed.length > 500 || !/[a-zA-Z]/.test(originalTrimmed)) return null;
 
         const lookupKey = originalTrimmed.replace(/\s+/g, ' ');
 
         let result = dict.get(lookupKey) || dict.get(originalTrimmed) || lowerDict.get(lookupKey.toLowerCase());
-        // 用函数式替换，避免译文中的 $&/$'/$$ 等被 replace 二次解释
         if (result) return text.replace(originalTrimmed, () => result);
 
         if (enableRegExp && regexTrigger.test(lookupKey)) {
@@ -79,7 +74,7 @@
         const res = translate(val);
         if (res && res !== val) {
             node.nodeValue = res;
-            translatedNodes.add(node); // 记录已翻译节点，防抖
+            translatedNodes.add(node);
         }
     }
 
@@ -102,7 +97,6 @@
         ['title', 'aria-label', 'data-confirm'].forEach(checkAttr);
     }
 
-    // 使用底层的 TreeWalker 极速提取文本节点和元素
     function extractNodes(root) {
         const walker = document.createTreeWalker(
             root,
@@ -110,14 +104,11 @@
             {
                 acceptNode: function (node) {
                     if (node.nodeType === Node.ELEMENT_NODE) {
-                        // 如果遇到不该翻译的区块，直接使用 FILTER_REJECT 砍掉整个分支，节约海量性能
                         if (node.matches && node.matches(UNSAFE_SELECTOR)) {
                             return NodeFilter.FILTER_REJECT;
                         }
-                        // 元素本身不需要加入文本流，只需要找里面的文本，所以跳过元素本身但进入其子节点
                         return NodeFilter.FILTER_SKIP;
                     }
-                    // 是安全的文本节点
                     return NodeFilter.FILTER_ACCEPT;
                 }
             }
@@ -130,7 +121,6 @@
             }
         }
 
-        // 利用 querySelectorAll 提取需要翻译属性的元素
         if (root.nodeType === Node.ELEMENT_NODE) {
             if (root.matches && root.matches(ATTR_SELECTOR)) elementQueue.push(root);
             const attrNodes = root.querySelectorAll(ATTR_SELECTOR);
@@ -140,22 +130,18 @@
         }
     }
 
-    // 核心帧循环：严格的时间片轮转（Time Slicing）
     function workLoop() {
-        const TIME_LIMIT = 12; // 严控在 12ms 以内，为浏览器绘制留出时间
+        const TIME_LIMIT = 12;
         const start = performance.now();
 
-        // 1. 翻译属性
         while (qHeadElem < elementQueue.length && (performance.now() - start) < TIME_LIMIT) {
             translateElementAttributes(elementQueue[qHeadElem++]);
         }
 
-        // 2. 翻译文本
         while (qHeadText < textQueue.length && (performance.now() - start) < TIME_LIMIT) {
             translateTextNode(textQueue[qHeadText++]);
         }
 
-        // 3. 内存回收或延续任务
         if (qHeadElem >= elementQueue.length && qHeadText >= textQueue.length) {
             elementQueue.length = 0;
             textQueue.length = 0;
@@ -163,12 +149,10 @@
             qHeadText = 0;
             isWorking = false;
         } else {
-            // 时间用尽，让出主线程，下一帧继续
             requestAnimationFrame(workLoop);
         }
     }
 
-    // 监听器
     const observer = new MutationObserver(mutations => {
         let shouldTrigger = false;
 
@@ -183,7 +167,6 @@
                         extractNodes(node);
                         shouldTrigger = true;
                     } else if (node.nodeType === Node.TEXT_NODE) {
-                        // 使用 closest 极速排查父级
                         if (node.parentElement && !node.parentElement.closest(UNSAFE_SELECTOR) && !translatedNodes.has(node)) {
                             textQueue.push(node);
                             shouldTrigger = true;
@@ -192,8 +175,6 @@
                 }
             } else if (m.type === 'characterData') {
                 const node = m.target;
-                // 内容已变化（如动态计数），跳过 translatedNodes 检查重新翻译；
-                // 自身写入引发的回环会在 translate 查无命中时自然终止
                 if (node.parentElement && !node.parentElement.closest(UNSAFE_SELECTOR)) {
                     textQueue.push(node);
                     shouldTrigger = true;
@@ -221,14 +202,12 @@
         }
         regexRules = configData.regexRules.map(rule => [new RegExp(rule[0], rule[2] || ""), rule[1]]);
 
-        // 初始页面打碎与解析
         extractNodes(document.body);
         if (!isWorking && (textQueue.length > 0 || elementQueue.length > 0)) {
             isWorking = true;
             requestAnimationFrame(workLoop);
         }
 
-        // 开启监听
         observer.observe(document.body, {
             childList: true,
             subtree: true,
