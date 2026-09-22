@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容。底层重构，彻底解决火狐拖慢网页问题，实现 0 阻塞、绝对丝滑。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      5.2.2
+// @version      5.2.3
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -35,8 +35,8 @@
 
     const regexTrigger = /[\d]|ago|updated|about|closed|now|restricted|task_categories/i;
 
-    // 优化：在非安全区增加 .font-mono, .shiki, .highlight, .blob-wrapper 等，屏蔽文件查看器与代码区
-    const UNSAFE_SELECTOR = 'script, style, code, pre, noscript, textarea, svg, iframe, canvas, [contenteditable="true"], .cm-editor, .monaco-editor, .ace_editor, .font-mono, .shiki, .highlight, .blob-wrapper, .blob-code, [class*="language-"], [data-testid="file-content"], .file-content';
+    // 优化：全面拦截各种代码框、编辑器、预格式化文本、语法高亮元素，防止误伤 Python 等代码
+    const UNSAFE_SELECTOR = 'script, style, code, pre, noscript, textarea, svg, iframe, canvas, [contenteditable="true"], .cm-editor, .monaco-editor, .ace_editor, .font-mono, .shiki, .highlight, .blob-wrapper, .blob-code, [class*="language-"], [data-testid="file-content"], .file-content, .whitespace-pre, .cm-content, .cm-line, .token, [class*="sourceCode"], [class*="syntax"], [style*="monospace"]';
     const ATTR_SELECTOR = '[placeholder], [title], [aria-label], [value], [data-confirm]';
 
     const translatedNodes = new WeakSet();
