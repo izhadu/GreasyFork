@@ -1,5 +1,5 @@
 {
-  "version": "2026.09.28 02:45:00",
+  "version": "2026.09.28 15:00:00",
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型",
@@ -626,7 +626,6 @@
     "Getting started with your bucket": "存储桶快速入门",
     "Upload via the web": "通过网页上传",
     "Upload files directly from the browser using the web uploader.": "直接从浏览器使用网页上传工具上传文件",
-    "Upload files": "上传文件",
     "Upload your bucket files": "上传存储桶文件",
     "Use": "使用",
     "to upload a local folder to this bucket.": "将本地文件夹上传到该存储桶",
