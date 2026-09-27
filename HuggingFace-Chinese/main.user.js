@@ -4,7 +4,7 @@
 // @description  中文化 Hugging Face 界面菜单及内容。基于 TreeWalker 及 GC 深度优化，彻底解决拖慢网页及卡顿问题，实现 0 阻塞、绝对丝滑。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      5.3.0
+// @version      6.0.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -57,7 +57,7 @@
 
         let result = dict.get(lookupKey) || dict.get(originalTrimmed);
         if (!result) result = lowerDict.get(lookupKey.toLowerCase());
-        
+
         if (result) return text.replace(originalTrimmed, () => result);
 
         if (enableRegExp && regexTrigger.test(lookupKey)) {
