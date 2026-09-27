@@ -1,5 +1,5 @@
 {
-  "version": "2026.09.28 15:10:00",
+  "version": "2026.09.28 15:30:00",
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型",
@@ -28,6 +28,11 @@
     "Notifications": "通知",
     "Help": "帮助",
     "New": "新建",
+    "Upload a model and get an API endpoint.": "上传模型并获取 API 接口。",
+    "Easily host your data.": "轻松托管您的数据。",
+    "Create an interactive ML demo.": "创建交互式机器学习演示。",
+    "Large-scale object storage for AI.": "面向 AI 的大规模对象存储。",
+    "Collect and organize items from the Hub.": "收集并整理 Hub 中的项目。",
     "Last update: ": "上次更新: ",
     "Next update: ": "下次更新: ",
     "Last update:": "上次更新:",
