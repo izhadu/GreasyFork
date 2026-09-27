@@ -14,6 +14,7 @@
 // @match        https://hf.space/*
 // @run-at       document-start
 // @connect      raw.githubusercontent.com
+// @connect      git.zhadu.com
 // @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
 // @grant        GM_notification
