@@ -6,12 +6,12 @@
 这是一个旨在为 [Hugging Face](https://huggingface.co/) 社区用户提供极致流畅中文化体验的 Tampermonkey 用户脚本。
 
 ## ⚡ 性能突破：我们是如何做到“零卡顿”的？
-Hugging Face 作为一个基于 React/Svelte 构建的现代单页应用 (SPA)，DOM 节点刷新极其频繁。传统翻译脚本在滚动页面时往往会引起严重掉帧。我们采用了最底层的浏览器接口彻底解决了这个问题：
+Hugging Face 作为一个基于 React/Svelte 构建的现代单页应用 (SPA)，DOM 节点刷新极其频繁。传统翻译脚本在滚动页面时往往会引起严重掉帧。我们在架构与底层 API 调用上进行了深度优化，彻底解决了这个问题：
 
-* **`requestIdleCallback` 智能调度：** 脚本放弃了激进的实时翻译，改为只在浏览器 CPU 完全空闲的毫秒级缝隙中进行工作。**你的鼠标滚动和点击优先级永远最高。**
-* **原生 `TreeWalker` 引擎：** 抛弃缓慢的 JS 递归，直接调用 C++ 级别的 DOM 文本遍历接口。
-* **安全沙盒：** 脚本会自动识别并跳过代码编辑器区 (`contenteditable`、Monaco Editor 等)，绝不污染你的代码输入。
-* **正则预检 (Fast-path)：** 在执行高消耗的正则表达式前，增加原生字符串指纹过滤，使循环开销降低 90%。
+* **`requestAnimationFrame` 时间切片：** 放弃阻塞式的实时翻译，采用时间切片（Time Slicing）机制，将翻译任务拆分并限制在每帧的规定时间内执行。**确保你的鼠标滚动和点击交互永远保持最高优先级。**
+* **单遍 `TreeWalker` 引擎：** 抛弃缓慢的 `querySelectorAll` 与 JS 递归，将属性提取与文本探测合并到一次 C++ 级别的 DOM 树遍历中完成，大幅降低 DOM 操作开销。
+* **内存与 GC 极致优化：** 延迟所有字符串的降级转换（如 `.toLowerCase()`），并在 `MutationObserver` 引入动态标记清除机制，拦截无效文本的重复遍历，极大地缓解了浏览器的垃圾回收（GC）压力。
+* **安全沙盒与属性预检：** 自动跳过代码编辑器区，且利用 `hasAttribute` 预检降低了对大量元素的无用属性读取。
 
 ## 🛠️ 安装指南
 
@@ -26,7 +26,7 @@ Hugging Face 作为一个基于 React/Svelte 构建的现代单页应用 (SPA)�
 * 支持翻译：*“1000 downloads”* -> *“1000次下载”*
 
 ## 🤝 参与贡献
-欢迎提交 Pull Request 来完善词库！你只需要在 `main.user.js` 中的 `translations` 字典里增加对应的中英文字段即可。
+欢迎提交 Pull Request 来完善词库！你只需要修改本仓库中的 `dict.json` 文件，增加对应的中英文字段即可（系统会自动分发更新）。
 
 ---
 *本项目代码维护于 GitHub 仓库：[izhadu/GreasyFork](https://github.com/izhadu/GreasyFork)*

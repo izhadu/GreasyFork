@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         HuggingFace 汉化
 // @namespace    https://github.com/izhadu/GreasyFork
-// @description  中文化 Hugging Face 界面菜单及内容。底层重构，彻底解决火狐拖慢网页问题，实现 0 阻塞、绝对丝滑。
+// @description  中文化 Hugging Face 界面菜单及内容。基于 TreeWalker 及 GC 深度优化，彻底解决拖慢网页及卡顿问题，实现 0 阻塞、绝对丝滑。
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
-// @version      5.2.4
+// @version      5.3.0
 // @author       izhadu
 // @license      GPL-3.0
 // @match        https://huggingface.co/*
@@ -55,7 +55,9 @@
 
         const lookupKey = originalTrimmed.replace(/\s+/g, ' ');
 
-        let result = dict.get(lookupKey) || dict.get(originalTrimmed) || lowerDict.get(lookupKey.toLowerCase());
+        let result = dict.get(lookupKey) || dict.get(originalTrimmed);
+        if (!result) result = lowerDict.get(lookupKey.toLowerCase());
+        
         if (result) return text.replace(originalTrimmed, () => result);
 
         if (enableRegExp && regexTrigger.test(lookupKey)) {
@@ -75,16 +77,18 @@
         const res = translate(val);
         if (res && res !== val) {
             node.nodeValue = res;
-            translatedNodes.add(node);
         }
+        translatedNodes.add(node);
     }
 
     function translateElementAttributes(el) {
         const checkAttr = (attr) => {
-            const val = el.getAttribute(attr);
-            if (val) {
-                const res = translate(val);
-                if (res && res !== val) el.setAttribute(attr, res);
+            if (el.hasAttribute(attr)) {
+                const val = el.getAttribute(attr);
+                if (val) {
+                    const res = translate(val);
+                    if (res && res !== val) el.setAttribute(attr, res);
+                }
             }
         };
 
@@ -102,6 +106,10 @@
         // 关键修复：确保传递进来的 root 节点本身不在代码框内
         if (root.nodeType === Node.ELEMENT_NODE && root.closest && root.closest(UNSAFE_SELECTOR)) return;
 
+        if (root.nodeType === Node.ELEMENT_NODE && root.matches && root.matches(ATTR_SELECTOR)) {
+            elementQueue.push(root);
+        }
+
         const walker = document.createTreeWalker(
             root,
             NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
@@ -110,6 +118,9 @@
                     if (node.nodeType === Node.ELEMENT_NODE) {
                         if (node.matches && node.matches(UNSAFE_SELECTOR)) {
                             return NodeFilter.FILTER_REJECT;
+                        }
+                        if (node.matches && node.matches(ATTR_SELECTOR)) {
+                            elementQueue.push(node);
                         }
                         return NodeFilter.FILTER_SKIP;
                     }
@@ -124,26 +135,21 @@
                 textQueue.push(currentNode);
             }
         }
-
-        if (root.nodeType === Node.ELEMENT_NODE) {
-            if (root.matches && root.matches(ATTR_SELECTOR)) elementQueue.push(root);
-            const attrNodes = root.querySelectorAll(ATTR_SELECTOR);
-            for (let i = 0; i < attrNodes.length; i++) {
-                elementQueue.push(attrNodes[i]);
-            }
-        }
     }
 
     function workLoop() {
         const TIME_LIMIT = 12;
         const start = performance.now();
+        let count = 0;
 
-        while (qHeadElem < elementQueue.length && (performance.now() - start) < TIME_LIMIT) {
+        while (qHeadElem < elementQueue.length) {
             translateElementAttributes(elementQueue[qHeadElem++]);
+            if (++count % 20 === 0 && (performance.now() - start) >= TIME_LIMIT) break;
         }
 
-        while (qHeadText < textQueue.length && (performance.now() - start) < TIME_LIMIT) {
+        while (qHeadText < textQueue.length) {
             translateTextNode(textQueue[qHeadText++]);
+            if (++count % 20 === 0 && (performance.now() - start) >= TIME_LIMIT) break;
         }
 
         if (qHeadElem >= elementQueue.length && qHeadText >= textQueue.length) {
@@ -181,6 +187,7 @@
             } else if (m.type === 'characterData') {
                 const node = m.target;
                 if (node.parentElement && !node.parentElement.closest(UNSAFE_SELECTOR)) {
+                    translatedNodes.delete(node);
                     textQueue.push(node);
                     shouldTrigger = true;
                 }
