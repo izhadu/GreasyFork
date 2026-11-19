@@ -1,5 +1,5 @@
 {
-  "version": "2026.09.28 15:30:00",
+  "version": "2026.11.19 14:45:00",
   "translations": {
     "@comment_nav": "================ 核心导航与通用 ================",
     "Models": "模型",
@@ -33,8 +33,6 @@
     "Create an interactive ML demo.": "创建交互式机器学习演示。",
     "Large-scale object storage for AI.": "面向 AI 的大规模对象存储。",
     "Collect and organize items from the Hub.": "收集并整理 Hub 中的项目。",
-    "Last update: ": "上次更新: ",
-    "Next update: ": "下次更新: ",
     "Last update:": "上次更新:",
     "Next update:": "下次更新:",
     " so your AI agents can manage ": "，以便您的 AI 智能体可以直接管理 ",
@@ -63,7 +61,6 @@
     "contributors": "贡献者",
     "History": "历史",
     "@comment_ai": "================ 侧边栏和 AI 任务 ================",
-    "Spaces:": "应用空间:",
     "Runtime error": "运行错误",
     "Go to file": "跳转到文件",
     "Filters": "筛选器",
@@ -131,7 +128,6 @@
     "Other": "其他",
     "Graph Machine Learning": "图机器学习",
     "Team & Enterprise": "团队与企业",
-    "Reachy": "Reachy",
     "Image Generation": "图像生成",
     "Video Generation": "视频生成",
     "Language Translation": "语言翻译",
@@ -146,7 +142,6 @@
     "Voice Cloning": "语音克隆",
     "Background Removal": "背景移除",
     "Image Upscaling": "图像放大",
-    "OCR": "OCR",
     "Document Analysis": "文档分析",
     "Visual QA": "视觉问答",
     "Image Captioning": "图像描述",
@@ -185,7 +180,6 @@
     "Submit": "提交",
     "Share": "分享",
     "Like": "点赞",
-    "like": "点赞",
     "Unlike": "取消点赞",
     "Follow": "关注",
     "Unfollow": "取消关注",
@@ -240,7 +234,6 @@
     "Deploy": "部署",
     "Use in Transformers": "在 Transformers 中使用",
     "Hosted inference API": "在线推理 API",
-    "Contributors": "贡献者",
     "Licenses": "许可证",
     "Likes": "点赞数",
     "Downloads": "下载量",
@@ -270,7 +263,6 @@
     "Apply for a community GPU grant.": "申请社区 GPU 算力赞助。",
     "Restart this Space": "重启此空间",
     "Restart Space": "重启空间",
-    "Restart space": "重启空间",
     "Click this button to trigger a restart of your Space.": "点击此处触发空间重启。",
     "Factory rebuild": "底层重建",
     "Click this button to trigger a factory rebuild of your Space. This will invalidate Docker layer caches and rebuild your space from scratch, reinstalling all dependencies.": "点击此处触发空间的底层重建。这将会使 Docker 缓存失效，并从头重新构建空间，重装所有依赖。",
@@ -299,9 +291,6 @@
     "public": "公开",
     "protected": "受保护",
     "private": "私有",
-    "Public": "公开",
-    "Protected": "受保护",
-    "Private": "私有",
     "(PRO required)": "(需 PRO 订阅)",
     ". Anyone on the internet can see this Space. Only you can commit.": "。互联网上的任何人均可访问，但只有您可以提交代码。",
     "Storage Buckets": "对象存储桶",
@@ -373,7 +362,6 @@
     "Posts": "文章",
     "Daily Papers": "每日论文",
     "Learn": "学习",
-    "Discord": "Discord",
     "Forum": "官方论坛",
     "Github": "GitHub",
     "Enterprise Hub": "企业中心",
@@ -416,7 +404,6 @@
     "New pull request": "新建 PR",
     "Watch all activity": "关注所有动态",
     "View closed": "查看已关闭",
-    "Sort:": "排序:",
     "Recently created": "最新创建",
     "Most reactions": "最高热度",
     "Trending": "热门趋势",
@@ -529,7 +516,6 @@
     "Type": "类型",
     "Jobs": "计算任务",
     "PRO": "PRO 版",
-    "ENTERPRISE": "企业版",
     "Teams": "团队版",
     "Create repository": "创建仓库",
     "Add repository": "添加仓库",
@@ -655,7 +641,6 @@
     "Add trusted publisher": "添加受信任的发布者",
     "Rename or transfer this bucket": "重命名或转移此存储桶",
     "All links to this bucket will automatically redirect to the new location.": "此存储桶的所有链接将自动重定向到新位置",
-    "New bucket name": "新存储桶名称",
     "I understand, move this bucket": "我了解，移动此存储桶",
     "Delete this Bucket": "删除此存储桶",
     "Bucket and all its files.": "存储桶及其所有文件",
@@ -718,7 +703,6 @@
     "Collections including this paper": "收录本文的收藏集",
     "Paper author": "论文作者",
     "Paper submitter": "论文提交者",
-    "Authors:": "作者：",
     "Copy markdown": "复制 Markdown",
     "Copy page as Markdown for LLMs": "复制页面为 Markdown（供 LLM 使用）",
     "View as Markdown": "以 Markdown 查看",
@@ -738,7 +722,6 @@
     "Accelerate your ML": "加速机器学习",
     "We provide paid Compute and Enterprise solutions.": "我们提供付费计算和企业解决方案",
     "Give your team the most advanced platform to build AI with enterprise-grade security, access controls and dedicated support.": "为团队提供最先进的 AI 构建平台，具备企业级安全、访问控制和专属支持",
-    "Starting at $20/user/month": "每位用户每月 $20 起",
     "Single Sign-On": "单点登录",
     "Regions": "区域",
     "Priority Support": "优先支持",
@@ -750,7 +733,6 @@
     "Compute": "计算",
     "Deploy on optimized Inference Endpoints or update your Spaces applications to a GPU in a few clicks.": "部署在优化的推理端点上，或一键将应用空间升级到 GPU",
     "View pricing": "查看定价",
-    "Starting at $0.60/hour for GPU": "GPU 每小时 $0.60 起",
     "@comment_ref_12": "================ Our Open Source ================",
     "Our Open Source": "我们的开源项目",
     "We are building the foundation of ML tooling with the community.": "我们与社区共同构建机器学习工具的基础",
@@ -774,7 +756,6 @@
     "Social": "社交媒体",
     "Keep track of latest changes on the Hugging Face Hub": "跟踪 Hugging Face Hub 的最新变更",
     "Brand assets": "品牌资源",
-    "Terms of service": "服务条款",
     "Press": "新闻媒体",
     "Service Status": "服务状态",
     "Speed test": "速度测试",
@@ -790,24 +771,8 @@
     "Inference Available": "推理可用",
     "Inference": "推理",
     "Add filters": "添加筛选",
-    "Sort: Trending": "排序: 热门",
-    "Sort: Relevance": "排序: 相关度",
     "Relevance": "相关度",
-    "Sort: Most Downloads": "排序: 下载最多",
-    "Sort: Most downloads": "排序: 下载最多",
-    "Sort: Newest": "排序: 最新",
-    "Sort: Most likes": "排序: 最多点赞",
-    "Sort: Most reactions": "排序: 最多回应",
-    "Sort: Recently created": "排序: 最近创建",
-    "Sort: Recently updated": "排序: 最近更新",
-    "Sort: Most rows": "排序: 行数最多",
-    "Sort: Least rows": "排序: 行数最少",
-    "Sort: Most parameters": "排序: 参数量最多",
-    "Sort: Least parameters": "排序: 参数量最少",
-    "Sort: Alphabetical": "排序: 字母顺序",
     "Alphabetical": "字母顺序",
-    "Sort: Largest total size": "排序: 总大小最大",
-    "Sort: Smallest total size": "排序: 总大小最小",
     "Most rows": "行数最多",
     "Least rows": "行数最少",
     "Largest total size": "总大小最大",
@@ -864,14 +829,12 @@
     "@comment_ref_24": "================ 通用操作 ================",
     "Ask anything you want to do with AI": "询问你想用 AI 做什么",
     "Use full-text search": "使用全文搜索",
-    "Use Full-text search": "使用全文搜索",
     "Filter": "筛选",
     "Open": "打开",
     "More": "更多",
     "Less": "收起",
     "View all": "查看全部",
     "See all": "查看全部",
-    "Loading...": "加载中...",
     "Report": "报告",
     "uploading": "上传",
     "configuring": "手动配置",
@@ -967,7 +930,6 @@
     "Subscribe to our newsletter": "订阅我们的新闻通讯",
     "@comment_ref_32": "================ 每日论文 ================",
     "Today": "今日",
-    "This Week": "本周",
     "This Month": "本月",
     "Vote": "投票",
     "Upvote": "赞同",
@@ -1013,10 +975,8 @@
     "Post": "发布",
     "Reply": "回复",
     "Updated": "更新于",
-    "updated": "更新于",
     "an": "一个",
     "a": "一个",
-    "update": "更新",
     "updated a model": "更新了一个模型",
     "posted an update": "发布了动态",
     "posted": "发布了",
@@ -1037,7 +997,6 @@
     "read more": "阅读更多",
     "See the documentation": "查看文档",
     "Space updated": "空间已更新",
-    "last 7 days": "过去 7 天",
     "@comment_ref_35": "================ 文档页 ================",
     "Search docs": "搜索文档",
     "Quick start": "快速开始",
@@ -1090,7 +1049,6 @@
     "@comment_ref_37": "================ 企业版页面 ================",
     "Scale your organization with the world’s leading AI platform": "用世界领先的 AI 平台扩展你的组织",
     "Subscribe to Team": "订阅团队版",
-    "starting at $20/user/month": "每位用户每月 $20 起",
     "Contact sales for Enterprise": "联系销售获取企业版",
     "to explore flexible contract options": "探索灵活的合约选项",
     "Give your organization the most advanced platform to build AI with": "为你的组织提供最先进的 AI 构建平台，具备",
@@ -1160,7 +1118,6 @@
     "Use Webhooks to subscribe to repo updates and/or discussion events on any model, dataset or Space (not just the ones you own). A Webhook will send a payload to the given URL or start a job when an event is triggered.": "使用 Webhook 订阅任何模型、数据集或应用空间（不仅限于你拥有的）的仓库更新和/或讨论事件。当事件触发时，Webhook 将向指定 URL 发送负载或启动作业",
     "New Webhook": "新建 Webhook",
     "For example you can auto-convert models, build community bots, or CI/CD for your datasets or Spaces.": "例如，你可以自动转换模型、构建社区机器人，或为数据集或应用空间设置 CI/CD",
-    "New webhook": "新建 Webhook",
     "Create webhook": "创建 Webhook",
     "Target repositories": "目标仓库",
     "Any repository on the hub you want to listen to new events, can be any model, dataset or Space. You can also subscribe to a whole user or org namespace.": "Hub 上你想监听新事件的任意仓库，可以是模型、数据集或应用空间。你也可以订阅整个用户或组织命名空间",
@@ -1290,7 +1247,6 @@
     ": Get exclusive early access to upcoming features": "：提前体验即将推出的功能",
     ": Show your support on your profile": "：在你的个人主页展示你的支持",
     "Spaces Dev Mode": "应用空间开发模式",
-    "Dataset Viewer": "数据集查看器",
     "Viewer": "查看器",
     "Features Preview": "功能预览",
     "PRO Badge": "PRO 徽章",
@@ -1365,7 +1321,6 @@
     "Confirm new password": "确认新密码",
     "Your primary email is used to communicate with you and to authenticate on hf.co. Additional emails help you join organizations and identify git commits you make.": "你的主邮箱用于与你沟通和在 hf.co 上验证身份。额外的邮箱帮助你加入组织和标识 Git 提交",
     "primary": "主邮箱",
-    "verified": "已验证",
     "Add an email": "添加邮箱",
     "Kernel Publishing": "内核发布",
     "Request access to start publishing": "请求访问权限以开始发布",
@@ -1605,7 +1560,6 @@
     "PRO Badge: Show your support on your profile": "PRO 徽章：在你的个人主页展示你的支持",
     "Monthly invoices": "月度发票",
     "@comment_ref_54": "================ 个人主页 ================",
-    "followers": "关注者",
     "No public activity": "暂无公开动态",
     "Create a new model repository": "创建新模型仓库",
     "Create model": "创建模型",
@@ -1614,7 +1568,6 @@
     "Anyone on the internet can see this model.": "互联网上的任何人都可以查看此模型",
     "Only you can commit.": "只有你可以提交",
     "Only you can see and commit to this model.": "只有你可以查看和提交到此模型",
-    "name": "名称",
     "Base template": "基础模板",
     "Create new dataset": "创建新数据集",
     "Create a new dataset repository": "创建新数据集仓库",
@@ -1658,8 +1611,6 @@
     "to use dev mode.": "使用开发模式",
     "to use protected Spaces.": "使用受保护的应用空间",
     "Learn more.": "了解更多",
-    "BETA": "测试版",
-    "Short Description": "简短描述",
     "New Space name": "新应用空间名称",
     "Choose a Gradio template:": "选择 Gradio 模板：",
     "Space Dev Mode": "应用空间开发模式",
@@ -1698,7 +1649,6 @@
     "No issue": "无问题",
     "raw": "原始",
     "blame": "追溯",
-    "preview": "预览",
     "metadata": "元数据",
     "code": "代码",
     "Copy download link": "复制下载链接",
@@ -1712,7 +1662,6 @@
     "Install from pip and serve model": "通过 pip 安装并启动模型",
     "to use this model in": "以在此应用中使用此模型",
     "Adapter": "适配器",
-    "Dataset card": "数据集卡片",
     "Edit dataset card": "编辑数据集卡片",
     "Edit model card": "编辑模型卡片",
     "Files info": "文件信息",
@@ -1745,22 +1694,16 @@
     "What's Excluded": "排除内容",
     "Launch Blog": "发布博客",
     "Model tree for": "模型树：",
-    "+ 2 Spaces": "+ 2 应用空间",
     "Benefits": "优势",
     "Best Practices": "最佳实践",
     "Column": "列",
     "Notes": "注释",
-    "Modalities:": "模态：",
     "Formats:": "格式：",
-    "Languages:": "语言：",
-    "license": "许可协议",
     "task_categories": "任务分类",
     "tags": "标签",
     "pretty_name": "显示名称",
     "size_categories": "大小分类",
-    "Tags:": "标签：",
     "Libraries:": "库：",
-    "Size:": "大小：",
     "End of preview.": "预览结束。",
     "Custom Hardware": "自定义硬件",
     "-- Select a custom hardware --": "-- 选择自定义硬件 --",
@@ -1780,17 +1723,13 @@
     "View all activity": "查看所有动态",
     "Filter models by name": "按名称筛选模型",
     "Filter datasets by name": "按名称筛选数据集",
-    "Tasks:": "任务：",
-    "Datasets:": "数据集：",
     "Contribute": "贡献",
     "Create new file": "创建新文件",
     "Create a new file": "创建新文件",
     "Safe": "安全",
-    "History:": "历史：",
     "Commit new file": "提交新文件",
     "Commit new file to": "提交新文件到 ",
     "Commit directly to the": "直接提交到 ",
-    "branch": "分支",
     "Open a Pull Request": "发起拉取请求",
     "Propose changes": "提议更改",
     "+ Add Pretty name": "+ 添加显示名称",
@@ -1877,7 +1816,143 @@
     "a model": "一个模型",
     "a dataset": "一个数据集",
     "a collection": "一个收藏集",
-    "a Space": "一个空间"
+    "a Space": "一个空间",
+    "@comment_ref_56": "================ 界面、数据集查看器、课程与推理端点补充 ================",
+    "Log Out": "退出登录",
+    "Sign In": "登录",
+    "Search Hugging Face": "搜索 Hugging Face",
+    "Apps": "应用",
+    "Size (rows)": "大小（行数）",
+    "Edit filters": "编辑筛选",
+    "Reset filters": "重置筛选",
+    "Reset Size": "重置大小",
+    "Clear all": "清除全部",
+    "Active filters:": "已选筛选：",
+    "Sort by": "排序方式",
+    "View all articles": "查看全部文章",
+    "Get Pro": "获取 Pro",
+    "Try it": "试一试",
+    "Created": "已创建",
+    "Explore Spaces": "探索空间",
+    "Browse all": "浏览全部",
+    "Spaces applications": "空间应用",
+    "Spaces using": "使用此模型的空间",
+    "Collections including": "包含此模型的收藏集",
+    "Papers for": "相关论文",
+    "View API Code": "查看 API 代码",
+    "Dismiss": "关闭",
+    "AutoTrain": "自动训练",
+    "Model info": "模型信息",
+    "Model Information": "模型信息",
+    "New file": "新建文件",
+    "Supported Inference Providers": "支持的推理服务商",
+    "Run 15,000+ Models Instantly": "即刻运行 15000+ 个模型",
+    "Search this dataset": "搜索此数据集",
+    "Subset": "子集",
+    "Split": "划分",
+    "Rows": "行",
+    "Columns": "列",
+    "Console": "控制台",
+    "Auto-converted to Parquet": "已自动转换为 Parquet",
+    "Models trained or fine-tuned on": "在此数据集上训练或微调的模型",
+    "First rows": "前几行",
+    "Random rows": "随机行",
+    "Export": "导出",
+    "Chart": "图表",
+    "Rows per page": "每页行数",
+    "Dataset Structure": "数据集结构",
+    "Data Instances": "数据实例",
+    "Data Fields": "数据字段",
+    "Data Splits": "数据划分",
+    "Runtime": "运行时",
+    "Sleeping": "休眠中",
+    "Building": "构建中",
+    "Pause": "暂停",
+    "Trending Papers": "热门论文",
+    "Submit a paper": "提交论文",
+    "Community Blog & Articles": "社区博客与文章",
+    "New Article": "新建文章",
+    "LLM Course": "LLM 课程",
+    "Agents Course": "智能体课程",
+    "Audio Course": "音频课程",
+    "Diffusion Course": "扩散模型课程",
+    "Open-Source AI Cookbook": "开源 AI 手册",
+    "ML for Games Course": "游戏机器学习课程",
+    "ML for 3D Course": "3D 机器学习课程",
+    "Context Course": "上下文课程",
+    "Robotics Course": "机器人学课程",
+    "Deep RL Course": "深度强化学习课程",
+    "Community Computer Vision Course": "社区计算机视觉课程",
+    "Case Studies": "案例研究",
+    "guide": "指南",
+    "ethics": "伦理",
+    "Skip": "跳过",
+    "Finish": "完成",
+    "Yes": "是",
+    "No": "否",
+    "OK": "确定",
+    "Try again": "重试",
+    "Retry": "重试",
+    "Refresh": "刷新",
+    "Copy link": "复制链接",
+    "Contact sales": "联系销售",
+    "Request a Quote": "获取报价",
+    "View Documentation": "查看文档",
+    "None": "无",
+    "Optional": "可选",
+    "Required": "必填",
+    "Everyone": "所有人",
+    "Followed": "已关注",
+    "Join": "加入",
+    "Star": "收藏",
+    "Starred": "已收藏",
+    "Send": "发送",
+    "Wiki": "维基",
+    "Mark all as read": "全部标为已读",
+    "Archive": "归档",
+    "SSH Keys": "SSH 密钥",
+    "New token": "新建令牌",
+    "Email preferences": "邮件偏好",
+    "Delete account": "删除账号",
+    "Danger zone": "危险操作区",
+    "Personal": "个人",
+    "Payment": "支付",
+    "References": "参考",
+    "Search documentation": "搜索文档",
+    "New Chat": "新对话",
+    "Start chatting": "开始聊天",
+    "Have an ML idea?": "有机器学习想法？",
+    "Trending models": "热门模型",
+    "Latest world news": "最新世界新闻",
+    "Generate an image": "生成图片",
+    "Learn something new": "学点新东西",
+    "Plan a trip": "规划旅行",
+    "Gift ideas": "礼物创意",
+    "Find a dataset": "找一个数据集",
+    "Compare technologies": "比较技术",
+    "Make my website": "做一个网站",
+    "Celebrate 3M models": "庆祝 300 万模型",
+    "Forgot password?": "忘记密码？",
+    "Create account": "创建账号",
+    "Continue with GitHub": "使用 GitHub 继续",
+    "Continue with Google": "使用 Google 继续",
+    "Sign up with email": "使用邮箱注册",
+    "Create my first Endpoint": "创建我的第一个端点",
+    "One-click deployment": "一键部署",
+    "Browse Catalog": "浏览目录",
+    "Hub Models": "Hub 模型",
+    "Install hf-cli": "安装 hf-cli",
+    "Fully Managed Infrastructure": "全托管基础设施",
+    "Autoscaling": "自动扩缩容",
+    "Observability": "可观测性",
+    "Inference Engines": "推理引擎",
+    "Choose a plan that fits your needs": "选择适合你的方案",
+    "Self-Serve": "自助服务",
+    "See Instance Pricing": "查看实例定价",
+    "Ship AI Faster with": "更快地部署 AI：",
+    "Get Started for Free": "免费开始",
+    "Team": "团队",
+    "Add your hardware": "添加你的硬件"
   },
   "regexRules": [
     [
@@ -2210,150 +2285,6 @@
       "发布于 12月$1日"
     ],
     [
-      "\\bJan (\\d{1,2})\\b",
-      "1月$1日"
-    ],
-    [
-      "\\bFeb (\\d{1,2})\\b",
-      "2月$1日"
-    ],
-    [
-      "\\bMar (\\d{1,2})\\b",
-      "3月$1日"
-    ],
-    [
-      "\\bApr (\\d{1,2})\\b",
-      "4月$1日"
-    ],
-    [
-      "\\bMay (\\d{1,2})\\b",
-      "5月$1日"
-    ],
-    [
-      "\\bJun (\\d{1,2})\\b",
-      "6月$1日"
-    ],
-    [
-      "\\bJul (\\d{1,2})\\b",
-      "7月$1日"
-    ],
-    [
-      "\\bAug (\\d{1,2})\\b",
-      "8月$1日"
-    ],
-    [
-      "\\bSep (\\d{1,2})\\b",
-      "9月$1日"
-    ],
-    [
-      "\\bOct (\\d{1,2})\\b",
-      "10月$1日"
-    ],
-    [
-      "\\bNov (\\d{1,2})\\b",
-      "11月$1日"
-    ],
-    [
-      "\\bDec (\\d{1,2})\\b",
-      "12月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Jan (\\d{4})\\b",
-      "$2年1月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Feb (\\d{4})\\b",
-      "$2年2月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Mar (\\d{4})\\b",
-      "$2年3月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Apr (\\d{4})\\b",
-      "$2年4月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) May (\\d{4})\\b",
-      "$2年5月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Jun (\\d{4})\\b",
-      "$2年6月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Jul (\\d{4})\\b",
-      "$2年7月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Aug (\\d{4})\\b",
-      "$2年8月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Sep (\\d{4})\\b",
-      "$2年9月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Oct (\\d{4})\\b",
-      "$2年10月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Nov (\\d{4})\\b",
-      "$2年11月$1日"
-    ],
-    [
-      "\\b(\\d{1,2}) Dec (\\d{4})\\b",
-      "$2年12月$1日"
-    ],
-    [
-      "^January (\\d{4})$",
-      "$1年1月"
-    ],
-    [
-      "^February (\\d{4})$",
-      "$1年2月"
-    ],
-    [
-      "^March (\\d{4})$",
-      "$1年3月"
-    ],
-    [
-      "^April (\\d{4})$",
-      "$1年4月"
-    ],
-    [
-      "^May (\\d{4})$",
-      "$1年5月"
-    ],
-    [
-      "^June (\\d{4})$",
-      "$1年6月"
-    ],
-    [
-      "^July (\\d{4})$",
-      "$1年7月"
-    ],
-    [
-      "^August (\\d{4})$",
-      "$1年8月"
-    ],
-    [
-      "^September (\\d{4})$",
-      "$1年9月"
-    ],
-    [
-      "^October (\\d{4})$",
-      "$1年10月"
-    ],
-    [
-      "^November (\\d{4})$",
-      "$1年11月"
-    ],
-    [
-      "^December (\\d{4})$",
-      "$1年12月"
-    ],
-    [
       "^Used storage: (.+)$",
       "已用存储：$1"
     ],
@@ -2409,6 +2340,116 @@
     [
       "^The task_categories \"(.+?)\" is not in the official list: (.+)$",
       "任务类别 \"$1\" 不在官方列表中：$2"
+    ],
+    [
+      "^(?:a|an|one)\\s+years?\\s+ago$",
+      "1 年前",
+      "i"
+    ],
+    [
+      "^(?:a|an|one)\\s+months?\\s+ago$",
+      "1 个月前",
+      "i"
+    ],
+    [
+      "^(?:a|an|one)\\s+weeks?\\s+ago$",
+      "1 周前",
+      "i"
+    ],
+    [
+      "^(?:a|an|one)\\s+days?\\s+ago$",
+      "1 天前",
+      "i"
+    ],
+    [
+      "^(?:a|an|one)\\s+hours?\\s+ago$",
+      "1 小时前",
+      "i"
+    ],
+    [
+      "^(?:a|an|one)\\s+minutes?\\s+ago$",
+      "1 分钟前",
+      "i"
+    ],
+    [
+      "^(?:a|an|one)\\s+seconds?\\s+ago$",
+      "1 秒前",
+      "i"
+    ],
+    [
+      "^Showing\\s+([\\d,]+)\\s*[-–]\\s*([\\d,]+)\\s+of\\s+([\\d,]+)$",
+      "显示 $1–$2，共 $3 条"
+    ],
+    [
+      "^Page\\s+(\\d+)\\s+of\\s+(\\d+)$",
+      "第 $1 页，共 $2 页"
+    ],
+    [
+      "^([\\d,]+)\\s*[-–]\\s*([\\d,]+)\\s+of\\s+([\\d,]+)$",
+      "$1–$2，共 $3 条"
+    ],
+    [
+      "^See all\\s+([\\d,]+)\\s+matches?\\s+in\\s+the\\s+full\\s+file\\.?$",
+      "查看完整文件中的全部 $1 处匹配"
+    ],
+    [
+      "^Browse\\s+([\\d,]+)\\s+models?\\s+trained\\s+on\\s+this\\s+dataset$",
+      "浏览在此数据集上训练的 $1 个模型"
+    ],
+    [
+      "^How to use (.+?) with (.+?):$",
+      "用 $2 加载 $1："
+    ],
+    [
+      "^Starting at (\\$[\\d.,]+)\\/user\\/month$",
+      "低至 $1/用户/月",
+      "i"
+    ],
+    [
+      "^Starting at (\\$[\\d.,]+)\\/hour for GPU$",
+      "GPU 低至 $1/小时",
+      "i"
+    ],
+    [
+      "^(\\d+)\\s+authors?$",
+      "$1 位作者",
+      "i"
+    ],
+    [
+      "^(\\d+)\\s+repl(?:y|ies)$",
+      "$1 条回复",
+      "i"
+    ],
+    [
+      "^([\\d.,]+\\s?[kKmMbB]?)\\s+rows?$",
+      "$1 行",
+      "i"
+    ],
+    [
+      "^Dataset Card for \"(.*)\"$",
+      "$1 的数据集卡"
+    ],
+    [
+      "^Model Card for \"(.*)\"$",
+      "$1 的模型卡"
+    ],
+    [
+      "^Space Card for \"(.*)\"$",
+      "$1 的应用空间卡"
+    ],
+    [
+      "^(\\d+)\\s+class(?:es)?$",
+      "$1 个类别",
+      "i"
+    ],
+    [
+      "^(\\d+)\\s+languages?$",
+      "$1 种语言",
+      "i"
+    ],
+    [
+      "^Config\\s*\\((\\d+)\\)$",
+      "配置 ($1)"
     ]
   ]
 }
