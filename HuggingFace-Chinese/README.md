@@ -1,32 +1,65 @@
-# HuggingFace 汉化
+# HuggingFace 汉化（词库 + AI/多源在线翻译版）
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![GreasyFork](https://img.shields.io/badge/GreasyFork-v1.1.2-red)](https://greasyfork.org/zh-CN/scripts/537528)
+[![GreasyFork](https://img.shields.io/badge/GreasyFork-v7.0.0-orange)](https://greasyfork.org/zh-CN/scripts/574934)
 
-这是一个旨在为 [Hugging Face](https://huggingface.co/) 社区用户提供极致流畅中文化体验的 Tampermonkey 用户脚本。
+一款专为 [Hugging Face](https://huggingface.co/)（及 `hf-mirror.com` 镜像站）打造的**双引擎中文化用户脚本**：界面高频术语采用**本地词库 0 延迟精准翻译**，长句、模型/数据集卡片（README）、论文摘要与讨论区支持 **AI 大模型（OpenAI 兼容接口）及多翻译源自动兜底**。
 
-## ⚡ 性能突破：我们是如何做到“零卡顿”的？
-Hugging Face 作为一个基于 React/Svelte 构建的现代单页应用 (SPA)，DOM 节点刷新极其频繁。传统翻译脚本在滚动页面时往往会引起严重掉帧。我们在架构与底层 API 调用上进行了深度优化，彻底解决了这个问题：
+---
 
-* **`requestAnimationFrame` 时间切片：** 放弃阻塞式的实时翻译，采用时间切片（Time Slicing）机制，将翻译任务拆分并限制在每帧的规定时间内执行。**确保你的鼠标滚动和点击交互永远保持最高优先级。**
-* **单遍 `TreeWalker` 引擎：** 抛弃缓慢的 `querySelectorAll` 与 JS 递归，将属性提取与文本探测合并到一次 C++ 级别的 DOM 树遍历中完成，大幅降低 DOM 操作开销。
-* **内存与 GC 极致优化：** 延迟所有字符串的降级转换（如 `.toLowerCase()`），并在 `MutationObserver` 引入动态标记清除机制，拦截无效文本的重复遍历，极大地缓解了浏览器的垃圾回收（GC）压力。
-* **安全沙盒与属性预检：** 自动跳过代码编辑器区，且利用 `hasAttribute` 预检降低了对大量元素的无用属性读取。
+## ✨ 核心特性
+
+### 1. 双层混合翻译架构
+* **第一层：零请求本地词库 + 动态规则引擎**
+  * 覆盖导航栏、筛选器、排序菜单、模型/数据集/Spaces/存储桶（Buckets）、设置、账单、MCP 服务器等全站高频界面术语（1890+ 精校词条 & 110+ 动态正则）。
+  * 内置**末尾标点自动回填**（自动兼容 `:`、`...`、`…` 变体）、**前缀递归翻译**（`Sort: ...`、`Updated ...`、`Created ...`）及**多格式日期汉化**（如 `8 Jun 2026` → `2026年6月8日`、`Updated about 3 days ago` → `更新于 大约 3 天前`）。
+* **第二层：AI 大模型 + 8 大在线翻译源智能兜底**
+  * **AI 翻译优先**：支持接入 **硅基流动 (SiliconFlow)**、**智谱 GLM**、**DeepSeek**、**OpenAI** 等任意 OpenAI 兼容接口（`/chat/completions`），针对 AI/ML 领域定制提示词，自动保留 `PyTorch`、`Safetensors`、`GGUF`、`LoRA`、`ZeroGPU` 等技术术语不误翻。
+  * **多源自动熔断与切换**：内置 `AI → 百度 API → 腾讯云 TMT → 腾讯交互翻译 → 必应/Edge → 有道 → Google → MyMemory` 优先级链；无需配置 Key 即可直接使用免费源，单一源连续失败 2 次自动熔断冷却 5 分钟并无缝切换备用源。
+  * **批量合并与持久化缓存**：自动按批次（最多 20 条 / 2200 字符）合并请求防限流，并将译文持久化缓存至本地（上限 5000 条），二次浏览 0 请求秒出。
+
+### 2. 页面内「🌐 AI 翻译卡片正文」按需开关
+* 默认保护 `.prose` / `.markdown-body`（模型卡、数据集卡、论文正文）不自动机翻，保持专业阅读体验。
+* 在卡片顶部自动注入 **「🌐 AI 翻译卡片正文」** 胶囊按钮：
+  * **点击开启**：调用已配置的 AI 或在线翻译源批量翻译正文。
+  * **再次点击**：无需刷新页面，立即从内存快照 **100% 还原英文原文**。
+
+### 3. ⚡ 极致性能：真正“零卡顿”
+* **`requestAnimationFrame` 时间切片（Time Slicing）**：将 DOM 翻译任务严格限制在每帧 `12ms` 时间预算内执行，超时自动让出主线程，确保页面滚动与点击交互永远保持最高优先级。
+* **单遍 `TreeWalker` + `WeakMap` 防环缓存**：在一次 C++ 级 DOM 遍历中同时完成节点筛选与属性提取；通过 `WeakMap` 记录已写入的节点值，彻底消除 `MutationObserver` 自我触发引起的重扫与死循环。
+* **严格的安全沙盒与专有名词保护**：自动跳过代码块（`pre` / `code` / Monaco / CodeMirror / Shiki / Highlight.js）、搜索下拉框、面包屑路径；单个英文单词、版本号、URL、`owner/repo` 仓库标识符绝不送入在线机翻。
+
+---
 
 ## 🛠️ 安装指南
 
-1.  **准备环境：** 请确保您的浏览器已安装了用户脚本管理器，例如 [Tampermonkey](https://www.tampermonkey.net/)。
-2.  **一键安装：** 前往 [GreasyFork 脚本主页](https://greasyfork.org/zh-CN/scripts/537528) 点击 **安装**。
-3.  *(可选) 从 GitHub 源安装：* 点击此仓库中的 `main.user.js`，选择 `Raw` 即可触发管理器安装。
+1. **安装脚本管理器**：请确保浏览器已安装 [Tampermonkey](https://www.tampermonkey.net/) 或 Violentmonkey。
+2. **一键安装**：前往 [GreasyFork 脚本主页](https://greasyfork.org/zh-CN/scripts/574934) 点击 **安装**。
+3. **从 GitHub 源安装（可选）**：打开本仓库中的 [`main.user.js`](https://github.com/izhadu/GreasyFork/raw/main/HuggingFace-Chinese/main.user.js) 即可触发安装。
 
-## ⚙️ 进阶功能：正则动态翻译
-脚本除了提供静态词汇映射外，还支持动态时间与数量的匹配。
-你可以在浏览器扩展菜单中点击 **🟢 开启正则翻译** / **🔴 关闭正则翻译** 自由切换。
-* 支持翻译：*“3 days ago”* -> *“3天前”*
-* 支持翻译：*“1000 downloads”* -> *“1000次下载”*
+---
+
+## ⚙️ 菜单设置与快捷键
+
+点击浏览器扩展栏中的 Tampermonkey 图标，即可使用以下功能：
+
+| 菜单项 / 快捷键 | 功能说明 |
+| :--- | :--- |
+| **`① 在线/AI 兜底翻译 [Alt+T]`** | 开启/关闭未命中长句的在线与 AI 兜底翻译（快捷键 **`Alt + T`** 一键切换并还原） |
+| **`② 正则动态翻译`** | 开启/关闭相对时间、数量统计等动态正则匹配 |
+| **`③ 设置 AI 翻译`** | 配置 OpenAI 兼容接口（Base URL、API Key、模型名，如 `Qwen/Qwen2.5-7B-Instruct`、`glm-4-flash`、`deepseek-chat`） |
+| **`④ 设置百度翻译`** | 配置百度翻译开放平台 `APPID` 与密钥 |
+| **`⑤ 设置腾讯云机器翻译`** | 配置腾讯云 TMT `SecretId`、`SecretKey` 与地域 |
+| **`⑥ 清空在线/AI 翻译缓存`** | 一键清除本地持久化的在线翻译缓存 |
+| **`⑦ 清空所有自定义翻译密钥`** | 清除本地保存的所有第三方 API Key |
+| **`🔄 立即更新本地汉化词库`** | 强制从远程主备源拉取最新 `dict.json` 并热重载生效 |
+
+---
 
 ## 🤝 参与贡献
-欢迎提交 Pull Request 来完善词库！你只需要修改本仓库中的 `dict.json` 文件，增加对应的中英文字段即可（系统会自动分发更新）。
+
+欢迎提交 Issue 或 Pull Request 来完善精准词库！
+你只需编辑本仓库中的 [`dict.json`](https://github.com/izhadu/GreasyFork/blob/main/HuggingFace-Chinese/dict.json) 文件，新增或修正中英文字段（客户端每 6 小时自动静默检查更新，也可通过菜单手动立即更新）。
 
 ---
 *本项目代码维护于 GitHub 仓库：[izhadu/GreasyFork](https://github.com/izhadu/GreasyFork)*

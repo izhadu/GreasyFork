@@ -12,9 +12,9 @@
 
 目前本仓库包含以下实用脚本，点击“安装链接”即可快速安装使用：
 
-| 脚本名称 | 源码目录 | 功能简介 | 状态 | 安装链接 |
-| :--- | :--- | :--- | :---: | :--- |
-| **HuggingFace 汉化** | [`/HuggingFace-Chinese`](./HuggingFace-Chinese) | 采用底层 `TreeWalker` 与 `requestIdleCallback` 优化，提供极致流畅、不卡顿的 Hugging Face 网页端界面汉化体验。 | 🟢 维护中 | [👉 点击安装](https://greasyfork.org/zh-CN/scripts/574934) |
+| 脚本名称 | 源码目录 | 当前版本 | 功能简介 | 状态 | 安装链接 |
+| :--- | :--- | :---: | :--- | :---: | :--- |
+| **HuggingFace 汉化** | [`/HuggingFace-Chinese`](./HuggingFace-Chinese) | `v7.0.0` | 双引擎架构：界面高频术语采用本地词库 + `TreeWalker` 与 `requestAnimationFrame` 时间切片实现 0 延迟丝滑汉化；未命中长句、模型/数据集卡片（README）及论文讨论支持 AI（硅基流动/智谱/DeepSeek 等 OpenAI 兼容接口）与 8 大在线翻译源自动兜底及一键还原。 | 🟢 维护中 | [GreasyFork 安装](https://greasyfork.org/zh-CN/scripts/574934) · [GitHub Raw 直装](https://github.com/izhadu/GreasyFork/raw/main/HuggingFace-Chinese/main.user.js) |
 
 > 💡 **提示：** 更多实用脚本正在开发和筹备中，敬请期待！*(持续更新中...)*
 
