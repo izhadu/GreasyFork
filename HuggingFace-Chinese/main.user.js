@@ -3,6 +3,7 @@
 // @name:en      HuggingFace Chinese Translator (Dict + AI/Online Fallback)
 // @namespace    https://github.com/izhadu/GreasyFork
 // @description  像「沉浸式翻译」那样中文化 Hugging Face 界面与内容：界面术语采用本地词库 + 时间切片 0 延迟精准汉化；未命中长句、Model/Dataset Card (README)、论文摘要与讨论区支持 AI（硅基流动/智谱/DeepSeek等 OpenAI 兼容接口）及多翻译源自动兜底，支持一键开关与原文还原。
+// @description:en Translate Hugging Face UI and content into Simplified Chinese: zero-latency local dictionary for UI terms, with AI (OpenAI-compatible) and multi-provider online translation fallback for Model/Dataset Cards, papers, and discussions.
 // @copyright    2026, izhadu
 // @icon         https://huggingface.co/front/assets/huggingface_logo-noborder.svg
 // @version      7.0.0
